@@ -241,6 +241,10 @@ export function PetForm({
   });
 
   React.useEffect(() => {
+    void form.trigger();
+  }, [form]);
+
+  React.useEffect(() => {
     if (images.length === 0) {
       setImageError(messages.form.addOneImage);
       return;
