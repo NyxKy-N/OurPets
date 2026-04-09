@@ -57,6 +57,19 @@ const basePetSchema = z
   })
   .superRefine(validateBirthDate);
 
+export const petFormSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    birthYear: z.number().int().min(currentYear - 40).max(currentYear),
+    birthMonth: z.number().int().min(1).max(12),
+    type: petTypeSchema,
+    gender: petGenderSchema.optional(),
+    breed: z.string().trim().max(80).optional(),
+    isNeutered: z.boolean().optional(),
+    description: z.string().trim().min(1).max(2000),
+  })
+  .superRefine(validateBirthDate);
+
 export const createPetSchema = basePetSchema;
 
 export const updatePetSchema = z

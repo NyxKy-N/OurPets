@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { CalendarDays, ShieldCheck, X } from "lucide-react";
 
 import { useI18n } from "@/app/providers";
-import { createPetSchema } from "@/lib/validators/pets";
+import { createPetSchema, petFormSchema } from "@/lib/validators/pets";
 import { apiFetch } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -226,7 +226,7 @@ export function PetForm({
   );
 
   const form = useForm<PetFormValues>({
-    resolver: zodResolver(createPetSchema.omit({ images: true })),
+    resolver: zodResolver(petFormSchema),
     mode: "onChange",
     defaultValues: {
       name: initial?.name ?? "",
