@@ -3,9 +3,10 @@
 import * as React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarDays, ShieldCheck, X } from "lucide-react";
 
@@ -48,6 +49,19 @@ type CloudinaryUploadResponse = {
   error?: { message?: string };
 };
 
+type EditablePet = {
+  id: string;
+  ownerId: string;
+  name: string;
+  birthDate: string | Date | null;
+  type: PetType;
+  gender: PetGender | null;
+  breed: string | null;
+  isNeutered: boolean | null;
+  description: string;
+  images: UploadedImage[];
+};
+
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
   return fallback;
@@ -85,6 +99,106 @@ async function uploadToCloudinary(file: File, sig: CloudinarySignature): Promise
     width: json.width,
     height: json.height,
   };
+}
+
+function PetFormState({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <Card className="rounded-[34px] p-5 sm:p-7">
+      <div className="mb-4 text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+        OurPets
+      </div>
+      <h1 className="text-3xl font-semibold tracking-[-0.04em]">{title}</h1>
+      <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">{description}</p>
+      {action ? <div className="mt-6">{action}</div> : null}
+    </Card>
+  );
+}
+
+export function PetFormPage({ mode, petId }: { mode: "create" | "edit"; petId?: string }) {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const { messages } = useI18n();
+  const queryEnabled = mode === "edit" && Boolean(petId) && status === "authenticated";
+  const petQuery = useQuery({
+    queryKey: ["pet-edit", petId],
+    queryFn: () => apiFetch<EditablePet>(`/api/pets/${petId}`),
+    enabled: queryEnabled,
+  });
+  const canEditPet = Boolean(
+    mode === "edit" &&
+      petQuery.data &&
+      session?.user?.id &&
+      (session.user.id === petQuery.data.ownerId || session.user.isAdmin)
+  );
+
+  React.useEffect(() => {
+    if (mode !== "edit" || !petId) return;
+    if (status !== "authenticated") return;
+    if (!petQuery.data) return;
+    if (canEditPet) return;
+    router.replace(`/pet/${petId}`);
+  }, [canEditPet, mode, petId, petQuery.data, router, status]);
+
+  if (status === "loading") {
+    return <PetFormState title={mode === "create" ? messages.form.createTitle : messages.form.editTitle} description={messages.common.loading} />;
+  }
+
+  if (!session?.user?.id) {
+    const callbackUrl = mode === "create" ? "/pets/new" : `/pet/${petId}/edit`;
+
+    return (
+      <PetFormState
+        title={mode === "create" ? messages.form.createTitle : messages.form.editTitle}
+        description={messages.header.signIn}
+        action={
+          <Button onClick={() => signIn("google", { callbackUrl })} className="w-full sm:w-auto">
+            {messages.header.signIn}
+          </Button>
+        }
+      />
+    );
+  }
+
+  if (mode === "create") {
+    return <PetForm mode="create" />;
+  }
+
+  if (petQuery.isLoading) {
+    return <PetFormState title={messages.form.editTitle} description={messages.common.loading} />;
+  }
+
+  if (petQuery.isError || !petQuery.data) {
+    return <PetFormState title={messages.form.editTitle} description={messages.common.somethingWentWrong} />;
+  }
+
+  if (!canEditPet) {
+    return <PetFormState title={messages.form.editTitle} description={messages.common.loading} />;
+  }
+
+  return (
+    <PetForm
+      mode="edit"
+      petId={petId}
+      initial={{
+        name: petQuery.data.name,
+        birthDate: petQuery.data.birthDate,
+        type: petQuery.data.type,
+        gender: petQuery.data.gender ?? "UNKNOWN",
+        breed: petQuery.data.breed ?? "",
+        isNeutered: petQuery.data.isNeutered ?? false,
+        description: petQuery.data.description,
+        images: petQuery.data.images,
+      }}
+    />
+  );
 }
 
 export function PetForm({
