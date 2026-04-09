@@ -13,8 +13,10 @@ const pgPool =
   globalForPrisma.pgPool ??
   new Pool({
     connectionString: env.DATABASE_URL,
-    // Aiven requires SSL. For strict validation, provide CA via PGSSLROOTCERT.
     ssl: { rejectUnauthorized: false },
+    max: 1,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
   });
 
 const adapter = new PrismaPg(pgPool);
@@ -26,7 +28,5 @@ export const prisma =
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.pgPool = pgPool;
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.pgPool = pgPool;
+globalForPrisma.prisma = prisma;
