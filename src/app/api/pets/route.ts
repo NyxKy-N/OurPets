@@ -24,11 +24,20 @@ export async function GET(req: Request) {
     }
 
     const take = query.limit + 1;
+    const orderBy: Prisma.PetOrderByWithRelationInput[] =
+      query.sort === "POPULAR"
+        ? [
+            { likes: { _count: "desc" } },
+            { comments: { _count: "desc" } },
+            { createdAt: "desc" },
+            { id: "desc" },
+          ]
+        : [{ createdAt: "desc" }, { id: "desc" }];
     const pets = await prisma.pet.findMany({
       where,
       take,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy,
       include: {
         owner: { select: { id: true, name: true, image: true } },
         images: { take: 1, orderBy: { createdAt: "asc" } },

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const petTypeSchema = z.enum(["DOG", "CAT", "OTHER"]);
+export const petSortSchema = z.enum(["LATEST", "POPULAR"]);
 
 export const petImageSchema = z.object({
   url: z.string().url(),
@@ -27,6 +28,7 @@ export const listPetsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(30).default(12),
   q: z.string().trim().min(1).max(80).optional(),
   type: petTypeSchema.optional(),
+  sort: petSortSchema.default("LATEST"),
   ownerId: z.string().cuid().optional(),
   ageMin: z.coerce.number().int().min(0).max(40).optional(),
   ageMax: z.coerce.number().int().min(0).max(40).optional(),

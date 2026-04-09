@@ -92,15 +92,22 @@ export function Comments({
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
-    <Card className="p-4 sm:p-6">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">{messages.comments.title}</h2>
+    <Card className="rounded-[32px] p-5 sm:p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+            {messages.comments.title}
+          </div>
+          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+            {messages.comments.title}
+          </h2>
+        </div>
         <div className="text-xs text-muted-foreground">
           {items.length || query.isLoading ? items.length : initialCount} {messages.common.total}
         </div>
       </div>
 
-      <div className="mt-4 space-y-2">
+      <div className="mt-5 space-y-3">
         <Textarea
           placeholder={
             viewerId ? messages.comments.writePlaceholder : messages.comments.signInPlaceholder
@@ -126,12 +133,13 @@ export function Comments({
             <Skeleton className="h-10 w-full" />
           </>
         ) : items.length === 0 ? (
-          <div className="rounded-lg border bg-background p-8 text-center text-sm text-muted-foreground">
+          <div className="glass-panel rounded-[24px] p-8 text-center text-sm text-muted-foreground">
             {messages.comments.empty}
           </div>
         ) : (
           items.map((c) => (
-            <div key={c.id} className="flex gap-3">
+            <div key={c.id} className="glass-panel rounded-[24px] p-4 sm:p-5">
+              <div className="flex gap-3">
               <Avatar className="h-9 w-9">
                 <AvatarImage src={c.user.image ?? undefined} />
                 <AvatarFallback>{c.user.name?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
@@ -162,6 +170,7 @@ export function Comments({
                   {c.content}
                 </p>
               </div>
+            </div>
             </div>
           ))
         )}

@@ -33,6 +33,8 @@ const messages = {
       es: "Español",
     },
     header: {
+      home: "Home",
+      discover: "Discover",
       explore: "Explore",
       addPet: "Add pet",
       profile: "Profile",
@@ -42,9 +44,20 @@ const messages = {
       language: "Language",
     },
     home: {
+      eyebrow: "Pet community",
       title: "OurPets",
       description:
         "Post your pets and discover new ones!",
+      supporting: "A quieter home for beautiful pet stories, thoughtful discovery, and lightweight social moments.",
+    },
+    discover: {
+      title: "Discover pets",
+      description: "Browse the latest posts, switch categories, and surface the pets people love most.",
+      browseLabel: "Discover",
+      categoryLabel: "Category",
+      sortLabel: "Sort",
+      latest: "Latest",
+      popular: "Popular",
     },
     feed: {
       searchPlaceholder: "Search pets by name…",
@@ -147,6 +160,8 @@ const messages = {
       es: "Español",
     },
     header: {
+      home: "首页",
+      discover: "发现",
       explore: "发现",
       addPet: "添加宠物",
       profile: "个人资料",
@@ -156,8 +171,19 @@ const messages = {
       language: "语言",
     },
     home: {
+      eyebrow: "宠物社区",
       title: "OurPets",
       description: "一个简洁现代的宠物社交动态，分享你喜爱的宠物，也发现更多可爱的伙伴。",
+      supporting: "更轻盈地展示品牌、内容与互动，让浏览路径更清晰，也让每一次发现更自然。",
+    },
+    discover: {
+      title: "发现宠物",
+      description: "浏览最新内容，切换分类，并快速查看最受欢迎的宠物动态。",
+      browseLabel: "内容浏览",
+      categoryLabel: "分类",
+      sortLabel: "排序",
+      latest: "最新",
+      popular: "热门",
     },
     feed: {
       searchPlaceholder: "按名字搜索宠物…",
@@ -261,6 +287,8 @@ const messages = {
       es: "Español",
     },
     header: {
+      home: "Home",
+      discover: "Scopri",
       explore: "Esplora",
       addPet: "Aggiungi animale",
       profile: "Profilo",
@@ -270,9 +298,21 @@ const messages = {
       language: "Lingua",
     },
     home: {
+      eyebrow: "Community per animali",
       title: "OurPets",
       description:
         "Un feed social minimale e moderno per condividere gli animali che ami e scoprirne di nuovi.",
+      supporting:
+        "Uno spazio più chiaro per il brand, la scoperta e interazioni leggere tra persone che amano gli animali.",
+    },
+    discover: {
+      title: "Scopri animali",
+      description: "Sfoglia i post più recenti, cambia categoria e metti in evidenza gli animali più apprezzati.",
+      browseLabel: "Esplora",
+      categoryLabel: "Categoria",
+      sortLabel: "Ordina",
+      latest: "Più recenti",
+      popular: "Popolari",
     },
     feed: {
       searchPlaceholder: "Cerca animali per nome…",
@@ -377,6 +417,8 @@ const messages = {
       es: "Español",
     },
     header: {
+      home: "Inicio",
+      discover: "Descubrir",
       explore: "Explorar",
       addPet: "Agregar mascota",
       profile: "Perfil",
@@ -386,8 +428,20 @@ const messages = {
       language: "Idioma",
     },
     home: {
+      eyebrow: "Comunidad de mascotas",
       title: "OurPets",
       description: "Publica tus mascotas y descubre nuevas!",
+      supporting:
+        "Un espacio más claro para presentar la marca, descubrir historias y moverte por el contenido con calma.",
+    },
+    discover: {
+      title: "Descubrir mascotas",
+      description: "Explora las publicaciones más recientes, cambia de categoría y destaca las mascotas más populares.",
+      browseLabel: "Descubrir",
+      categoryLabel: "Categoría",
+      sortLabel: "Ordenar",
+      latest: "Recientes",
+      popular: "Populares",
     },
     feed: {
       searchPlaceholder: "Buscar mascotas por nombre…",

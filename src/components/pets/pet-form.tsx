@@ -149,11 +149,14 @@ export function PetForm({
   }
 
   return (
-    <Card className="p-4 sm:p-6">
-      <h1 className="text-2xl font-semibold tracking-tight">
+    <Card className="rounded-[34px] p-5 sm:p-7">
+      <div className="mb-4 text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+        OurPets
+      </div>
+      <h1 className="text-3xl font-semibold tracking-[-0.04em]">
         {mode === "create" ? messages.form.createTitle : messages.form.editTitle}
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
         {messages.form.description}
       </p>
 
@@ -161,15 +164,18 @@ export function PetForm({
         className="mt-6 grid gap-6"
         onSubmit={form.handleSubmit((values) => submit.mutate(values))}
       >
-        <div className="grid gap-2">
+        <div className="glass-panel rounded-[26px] p-4 sm:p-5">
+          <div className="grid gap-2">
           <label className="text-sm font-medium">{messages.form.name}</label>
           <Input {...form.register("name")} placeholder={messages.form.namePlaceholder} />
           {form.formState.errors.name ? (
             <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
           ) : null}
         </div>
+        </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="glass-panel rounded-[26px] p-4 sm:p-5">
           <div className="grid gap-2">
             <label className="text-sm font-medium">{messages.form.age}</label>
             <Input
@@ -182,11 +188,13 @@ export function PetForm({
               <p className="text-xs text-destructive">{form.formState.errors.age.message}</p>
             ) : null}
           </div>
+          </div>
 
-          <div className="grid gap-2">
+          <div className="glass-panel rounded-[26px] p-4 sm:p-5">
+            <div className="grid gap-2">
             <label className="text-sm font-medium">{messages.form.type}</label>
             <select
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              className="h-11 rounded-2xl border border-input/70 bg-background/72 px-4 text-sm shadow-[inset_0_1px_0_hsl(var(--background)/0.65)] backdrop-blur-xl"
               {...form.register("type")}
             >
               <option value="DOG">{messages.form.dog}</option>
@@ -194,9 +202,11 @@ export function PetForm({
               <option value="OTHER">{messages.form.other}</option>
             </select>
           </div>
+          </div>
         </div>
 
-        <div className="grid gap-2">
+        <div className="glass-panel rounded-[26px] p-4 sm:p-5">
+          <div className="grid gap-2">
           <label className="text-sm font-medium">{messages.form.descriptionLabel}</label>
           <Textarea
             rows={6}
@@ -209,8 +219,10 @@ export function PetForm({
             </p>
           ) : null}
         </div>
+        </div>
 
-        <div className="grid gap-3">
+        <div className="glass-panel rounded-[26px] p-4 sm:p-5">
+          <div className="grid gap-3">
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium">{messages.form.images}</label>
             <div className="text-xs text-muted-foreground">{images.length}/8</div>
@@ -223,24 +235,24 @@ export function PetForm({
             disabled={uploading}
           />
           {images.length === 0 ? (
-            <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">
+            <div className="rounded-[22px] border border-dashed border-border/70 bg-background/60 p-6 text-center text-sm text-muted-foreground">
               {messages.form.addOneImage}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {images.map((img) => (
-                <div key={img.publicId} className="relative aspect-square overflow-hidden rounded-xl">
+                <div key={img.publicId} className="group relative aspect-square overflow-hidden rounded-[22px]">
                   <Image
                     src={img.url}
                     alt={messages.form.images}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                     sizes="(max-width: 640px) 50vw, 200px"
                   />
                   <button
                     type="button"
                     onClick={() => setImages((prev) => prev.filter((i) => i.publicId !== img.publicId))}
-                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/75"
+                    className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/75"
                     aria-label={messages.form.removeImage}
                   >
                     <X className="h-4 w-4" />
@@ -249,6 +261,7 @@ export function PetForm({
               ))}
             </div>
           )}
+        </div>
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

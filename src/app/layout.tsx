@@ -46,9 +46,9 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col overflow-x-hidden">
         <Providers session={session} initialLocale={locale} initialMessages={messages}>
           <Header />
-          <main className="flex-1">{children}</main>
-          <footer className="border-t py-8">
-            <div className="mx-auto max-w-5xl px-4 text-center text-sm text-muted-foreground sm:text-left">
+          <main className="flex-1 pb-8">{children}</main>
+          <footer className="px-4 pb-10 pt-3">
+            <div className="glass-panel mx-auto max-w-6xl rounded-[30px] px-5 py-4 text-center text-sm text-muted-foreground sm:text-left">
               © {new Date().getFullYear()} OurPets
             </div>
           </footer>

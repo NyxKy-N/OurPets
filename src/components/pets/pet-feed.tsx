@@ -10,10 +10,12 @@ import { PetCard, type PetFeedItem } from "@/components/pets/pet-card";
 import { PetCardSkeleton } from "@/components/pets/pet-card-skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Reveal } from "@/components/ui/reveal";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type PetsPage = { items: PetFeedItem[]; nextCursor: string | null };
 type PetTypeFilter = "ALL" | "DOG" | "CAT" | "OTHER";
+type PetSortFilter = "LATEST" | "POPULAR";
 
 function useIntersectionObserver<T extends Element>(options?: IntersectionObserverInit) {
   const ref = React.useRef<T | null>(null);
@@ -34,15 +36,17 @@ export function PetFeed() {
   const { messages } = useI18n();
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
+  const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
 
   const query = useInfiniteQuery({
-    queryKey: ["pets", { q, type }],
+    queryKey: ["pets", { q, type, sort }],
     queryFn: ({ pageParam }) => {
       const sp = new URLSearchParams();
       sp.set("limit", "12");
       if (pageParam) sp.set("cursor", String(pageParam));
       if (q.trim()) sp.set("q", q.trim());
       if (type !== "ALL") sp.set("type", type);
+      sp.set("sort", sort);
       return apiFetch<PetsPage>(`/api/pets?${sp.toString()}`);
     },
     initialPageParam: null as string | null,
@@ -67,71 +71,130 @@ export function PetFeed() {
     }
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  const resultsKey = `${type}-${sort}-${q.trim()}`;
+
   return (
-    <section className="mt-10">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Input
-            placeholder={messages.feed.searchPlaceholder}
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            className="w-full sm:max-w-md"
-          />
-          <Button
-            variant="outline"
-            onClick={() => query.refetch()}
-            disabled={query.isFetching}
-            className="w-full sm:w-auto"
-          >
-            {messages.feed.refresh}
-          </Button>
+    <section id="pet-feed" className="scroll-mt-28">
+      <div className="glass-panel rounded-[34px] p-5 sm:p-6 lg:p-7">
+        <div className="flex flex-col gap-6 lg:gap-7">
+          <div className="space-y-2">
+            <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+              {messages.discover.browseLabel}
+            </div>
+            <h2 className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
+              {messages.discover.title}
+            </h2>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{messages.discover.description}</p>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
+            <div className="glass-panel rounded-[28px] p-3.5">
+              <div className="flex flex-col gap-3">
+                <Input
+                  placeholder={messages.feed.searchPlaceholder}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  className="w-full focus-visible:ring-primary/45"
+                />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    {items.length} {messages.common.total}
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => query.refetch()}
+                    disabled={query.isFetching}
+                    className="w-full sm:w-auto"
+                  >
+                    {messages.feed.refresh}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="glass-panel rounded-[28px] p-3">
+                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                  {messages.discover.categoryLabel}
+                </div>
+                <Tabs
+                  value={type}
+                  onValueChange={(v) => {
+                    if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") setType(v);
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1 lg:grid-cols-4">
+                    <TabsTrigger value="ALL" className="w-full text-[13px] sm:text-sm">
+                      {messages.feed.all}
+                    </TabsTrigger>
+                    <TabsTrigger value="DOG" className="w-full text-[13px] sm:text-sm">
+                      {messages.feed.dogs}
+                    </TabsTrigger>
+                    <TabsTrigger value="CAT" className="w-full text-[13px] sm:text-sm">
+                      {messages.feed.cats}
+                    </TabsTrigger>
+                    <TabsTrigger value="OTHER" className="w-full text-[13px] sm:text-sm">
+                      {messages.feed.other}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              <div className="glass-panel rounded-[28px] p-3">
+                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                  {messages.discover.sortLabel}
+                </div>
+                <Tabs
+                  value={sort}
+                  onValueChange={(v) => {
+                    if (v === "LATEST" || v === "POPULAR") setSort(v);
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1">
+                    <TabsTrigger value="LATEST" className="w-full">
+                      {messages.discover.latest}
+                    </TabsTrigger>
+                    <TabsTrigger value="POPULAR" className="w-full">
+                      {messages.discover.popular}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+          </div>
         </div>
-        <Tabs
-          value={type}
-          onValueChange={(v) => {
-            if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") setType(v);
-          }}
-          className="w-full lg:w-auto"
-        >
-          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4 lg:w-auto">
-            <TabsTrigger value="ALL" className="w-full">
-              {messages.feed.all}
-            </TabsTrigger>
-            <TabsTrigger value="DOG" className="w-full">
-              {messages.feed.dogs}
-            </TabsTrigger>
-            <TabsTrigger value="CAT" className="w-full">
-              {messages.feed.cats}
-            </TabsTrigger>
-            <TabsTrigger value="OTHER" className="w-full">
-              {messages.feed.other}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
-      <div className="mt-6 grid gap-4">
+      <div key={resultsKey} className="content-stream mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {query.isLoading ? (
           <>
-            <PetCardSkeleton />
-            <PetCardSkeleton />
-            <PetCardSkeleton />
+            <PetCardSkeleton layout="grid" />
+            <PetCardSkeleton layout="grid" />
+            <PetCardSkeleton layout="grid" />
           </>
         ) : items.length === 0 ? (
-          <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
-            {messages.feed.empty}
-          </div>
+          <Reveal>
+            <div className="glass-panel rounded-[28px] p-10 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3">
+              {messages.feed.empty}
+            </div>
+          </Reveal>
         ) : (
-          items.map((pet) => <PetCard key={pet.id} pet={pet} />)
+          items.map((pet, index) => (
+            <Reveal key={pet.id} delay={Math.min(index * 70, 280)}>
+              <PetCard pet={pet} layout="grid" className="h-full" />
+            </Reveal>
+          ))
         )}
       </div>
 
       <div ref={sentinelRef} className="h-1" />
 
       {query.isFetchingNextPage ? (
-        <div className="mt-4 grid gap-4">
-          <PetCardSkeleton />
-          <PetCardSkeleton />
+        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <PetCardSkeleton layout="grid" />
+          <PetCardSkeleton layout="grid" />
         </div>
       ) : null}
 

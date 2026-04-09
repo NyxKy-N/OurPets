@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { PetCard, type PetFeedItem } from "@/components/pets/pet-card";
 import { PetCardSkeleton } from "@/components/pets/pet-card-skeleton";
+import { Reveal } from "@/components/ui/reveal";
 
 type UserMe = { id: string; name: string | null; email: string; image: string | null; createdAt: string };
 type PetsPage = { items: PetFeedItem[]; nextCursor: string | null };
@@ -63,67 +64,91 @@ export function ProfileClient({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="p-4 sm:p-6">
-        <h1 className="text-2xl font-semibold tracking-tight">{messages.profile.title}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {messages.profile.description}
-        </p>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">{messages.profile.displayName}</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-            <div className="text-xs text-muted-foreground">
-              {messages.profile.signedInAs}: {me.data?.email ?? "…"}
-            </div>
+      <Reveal>
+        <Card className="rounded-[34px] p-5 sm:p-7">
+          <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+            {messages.profile.title}
           </div>
-          <Button
-            onClick={() => saveName.mutate()}
-            disabled={saveName.isPending || !name.trim() || name === (me.data?.name ?? "")}
-            className="w-full sm:w-auto"
-          >
-            {messages.common.save}
-          </Button>
-        </div>
-      </Card>
+          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em]">
+            {messages.profile.title}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
+            {messages.profile.description}
+          </p>
 
-      <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">{messages.profile.yourPets}</h2>
-          <Button asChild variant="outline">
-            <Link href="/pets/new" prefetch={false}>
-              {messages.header.addPet}
-            </Link>
-          </Button>
-        </div>
-
-        <div className="grid gap-4">
-          {pets.isLoading ? (
-            <>
-              <PetCardSkeleton />
-              <PetCardSkeleton />
-            </>
-          ) : petItems.length === 0 ? (
-            <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
-            {messages.profile.empty}
+          <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+            <div className="glass-panel rounded-[26px] p-4 sm:p-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">{messages.profile.displayName}</label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+                <div className="text-xs text-muted-foreground">
+                  {messages.profile.signedInAs}: {me.data?.email ?? "…"}
+                </div>
+              </div>
             </div>
-          ) : (
-            petItems.map((p) => <PetCard key={p.id} pet={p} />)
-          )}
-        </div>
-
-        {pets.hasNextPage ? (
-          <div className="flex justify-center">
             <Button
-              variant="outline"
-              onClick={() => pets.fetchNextPage()}
-              disabled={pets.isFetchingNextPage}
+              onClick={() => saveName.mutate()}
+              disabled={saveName.isPending || !name.trim() || name === (me.data?.name ?? "")}
+              className="w-full sm:w-auto"
             >
-            {pets.isFetchingNextPage ? messages.common.loading : messages.comments.loadMore}
+              {messages.common.save}
             </Button>
           </div>
-        ) : null}
-      </section>
+        </Card>
+      </Reveal>
+
+      <Reveal delay={90}>
+        <section className="space-y-4">
+          <div className="glass-panel rounded-[30px] p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+                  {messages.profile.yourPets}
+                </div>
+                <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+                  {messages.profile.yourPets}
+                </h2>
+              </div>
+              <Button asChild variant="outline">
+                <Link href="/pets/new" prefetch={false}>
+                  {messages.header.addPet}
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-4">
+            {pets.isLoading ? (
+              <>
+                <PetCardSkeleton />
+                <PetCardSkeleton />
+              </>
+            ) : petItems.length === 0 ? (
+              <div className="glass-panel rounded-[28px] p-10 text-center text-sm text-muted-foreground">
+                {messages.profile.empty}
+              </div>
+            ) : (
+              petItems.map((p, index) => (
+                <Reveal key={p.id} delay={Math.min(index * 70, 280)}>
+                  <PetCard pet={p} />
+                </Reveal>
+              ))
+            )}
+          </div>
+
+          {pets.hasNextPage ? (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => pets.fetchNextPage()}
+                disabled={pets.isFetchingNextPage}
+              >
+                {pets.isFetchingNextPage ? messages.common.loading : messages.comments.loadMore}
+              </Button>
+            </div>
+          ) : null}
+        </section>
+      </Reveal>
     </div>
   );
 }

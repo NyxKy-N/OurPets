@@ -1,6 +1,8 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { Check, Languages, LogIn, LogOut, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -20,31 +22,54 @@ import { locales } from "@/lib/i18n";
 
 export function Header() {
   const { data: session, status } = useSession();
+  const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { locale, messages, setLocale } = useI18n();
+  const [scrolled, setScrolled] = React.useState(false);
 
-  const navLinks = [
-    { href: "/", label: messages.header.explore },
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 18);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const primaryLinks = [
+    { href: "/", label: messages.header.home, active: pathname === "/" },
+    {
+      href: "/discover",
+      label: messages.header.discover,
+      active: pathname === "/discover",
+    },
+  ];
+
+  const utilityLinks = [
     ...(session
       ? [
-          { href: "/pets/new", label: messages.header.addPet },
-          { href: "/profile", label: messages.header.profile },
+          { href: "/pets/new", label: messages.header.addPet, active: pathname === "/pets/new" },
+          { href: "/profile", label: messages.header.profile, active: pathname === "/profile" },
         ]
       : []),
   ];
 
   return (
-    <header className="border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3">
+    <header className="px-3 pt-4 sm:px-4 sm:pt-5">
+      <div
+        className={`navbar-shell glass-panel-strong mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5 sm:px-5 ${scrolled ? "is-scrolled" : ""}`}
+      >
         <div className="flex items-center justify-between gap-3">
-          <Link href="/" prefetch={false} className="shrink-0 text-lg font-semibold tracking-tight sm:text-xl">
+          <Link
+            href="/"
+            prefetch={false}
+            className="shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-[transform,opacity] duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80 sm:text-xl"
+          >
             OurPets
           </Link>
 
-          <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-10 gap-2 px-3">
+                <Button variant="outline" className="h-10 gap-2 px-3.5">
                   <Languages className="h-4 w-4" />
                   <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
                 </Button>
@@ -64,7 +89,7 @@ export function Header() {
             </DropdownMenu>
 
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               aria-label={messages.header.toggleTheme}
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -74,11 +99,11 @@ export function Header() {
             </Button>
 
             {status === "loading" ? (
-              <div className="h-10 w-24 animate-pulse rounded-md bg-muted" />
+              <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
             ) : session ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-10 rounded-full px-2 sm:rounded-md">
+                  <Button variant="outline" className="h-10 px-2.5">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={session.user.image ?? undefined} />
                       <AvatarFallback>
@@ -114,7 +139,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button onClick={() => signIn("google")} className="gap-2 px-3 sm:px-4">
+              <Button onClick={() => signIn("google")} className="gap-2 px-3.5 sm:px-4.5">
                 <LogIn className="h-4 w-4" />
                 <span className="hidden sm:inline">{messages.header.signIn}</span>
               </Button>
@@ -122,18 +147,45 @@ export function Header() {
           </div>
         </div>
 
-        <nav className="grid grid-cols-2 gap-2 text-sm text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-4">
-          {navLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              prefetch={false}
-              className="rounded-md border border-transparent bg-muted/50 px-3 py-2 text-center transition-colors hover:border-border hover:bg-accent hover:text-foreground sm:bg-transparent sm:px-0 sm:py-0 sm:text-left"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+          <nav className="grid grid-cols-2 gap-2 text-sm text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+            {primaryLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                aria-current={item.active ? "page" : undefined}
+                className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] sm:text-left ${
+                  item.active
+                    ? "glass-button border-primary/28 bg-primary/[0.16] text-foreground shadow-[0_14px_32px_hsl(var(--primary)/0.16)]"
+                    : "glass-button text-foreground/78"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          {utilityLinks.length > 0 ? (
+            <nav className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              {utilityLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={false}
+                  aria-current={item.active ? "page" : undefined}
+                  className={`inline-flex items-center justify-center rounded-full px-4 py-2 transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] ${
+                    item.active
+                      ? "glass-button border-primary/24 bg-primary/[0.14] text-foreground"
+                      : "glass-button text-foreground/72"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
+        </div>
       </div>
     </header>
   );

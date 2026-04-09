@@ -7,7 +7,7 @@ function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
     <div
       data-slot="card"
       className={cn(
-        "rounded-lg border bg-card text-card-foreground shadow-sm",
+        "glass-panel hover-lift rounded-[28px] text-card-foreground",
         className
       )}
       {...props}
@@ -74,4 +74,3 @@ function CardFooter({
 }
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent };
-
