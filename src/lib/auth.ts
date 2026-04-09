@@ -5,6 +5,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 
+const adminEmails = new Set(["kevincheng2521@gmail.com"]);
+
+export function isAdminEmail(email?: string | null) {
+  return Boolean(email && adminEmails.has(email.trim().toLowerCase()));
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
@@ -20,9 +26,9 @@ export const authOptions: NextAuthOptions = {
     session: async ({ session, user }) => {
       if (session.user) {
         session.user.id = user.id;
+        session.user.isAdmin = isAdminEmail(user.email);
       }
       return session;
     },
   },
 };
-

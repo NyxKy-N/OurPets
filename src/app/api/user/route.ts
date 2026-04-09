@@ -10,7 +10,7 @@ export async function GET() {
     const user = await requireUser();
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { id: true, name: true, email: true, image: true, createdAt: true },
+      select: { id: true, name: true, email: true, image: true, bio: true, createdAt: true },
     });
     if (!dbUser) throw new ApiError(404, "User not found", "NOT_FOUND");
     return NextResponse.json({ ok: true, data: dbUser });
@@ -27,8 +27,8 @@ export async function PATCH(req: Request) {
 
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { name: input.name },
-      select: { id: true, name: true, email: true, image: true, createdAt: true },
+      data: { name: input.name, image: input.image, bio: input.bio },
+      select: { id: true, name: true, email: true, image: true, bio: true, createdAt: true },
     });
 
     return NextResponse.json({ ok: true, data: updated });
@@ -36,4 +36,3 @@ export async function PATCH(req: Request) {
     return handleRouteError(err);
   }
 }
-

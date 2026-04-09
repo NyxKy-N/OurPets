@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/auth-server";
+import { canManageOwnedResource, getSession } from "@/lib/auth-server";
 import { PetForm } from "@/components/pets/pet-form";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -16,7 +16,7 @@ export default async function EditPetPage({ params }: PageProps) {
     include: { images: { orderBy: { createdAt: "asc" } } },
   });
   if (!pet) redirect("/");
-  if (pet.ownerId !== session.user.id) redirect(`/pet/${id}`);
+  if (!canManageOwnedResource(session.user, pet.ownerId)) redirect(`/pet/${id}`);
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8 lg:py-10">
@@ -25,8 +25,11 @@ export default async function EditPetPage({ params }: PageProps) {
         petId={id}
         initial={{
           name: pet.name,
-          age: pet.age,
+          birthDate: pet.birthDate,
           type: pet.type,
+          gender: pet.gender ?? "UNKNOWN",
+          breed: pet.breed ?? "",
+          isNeutered: pet.isNeutered ?? false,
           description: pet.description,
           images: pet.images.map(
             (i: { url: string; publicId: string; width: number | null; height: number | null }) => ({

@@ -12,14 +12,22 @@ enum PetType {
   OTHER
 }
 
+enum PetGender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
 model User {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  image     String?
-  emailVerified DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String    @unique
+  image               String?
+  bio                 String?
+  emailVerified       DateTime?
+  notificationsReadAt DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // NextAuth relations
   accounts Account[]
@@ -72,14 +80,18 @@ model VerificationToken {
 }
 
 model Pet {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   name        String
   age         Int
+  birthDate   DateTime?
   type        PetType
+  gender      PetGender?
+  breed       String?
+  isNeutered  Boolean?
   description String
   ownerId     String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   owner    User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   images   Image[]
@@ -111,13 +123,17 @@ model Comment {
   content   String
   userId    String
   petId     String
+  parentId  String?
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pet  Pet  @relation(fields: [petId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pet     Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
 
   @@index([petId, createdAt])
   @@index([userId, createdAt])
+  @@index([parentId, createdAt])
 }
 
 model Like {

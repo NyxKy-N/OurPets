@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -59,6 +60,7 @@ export function PetFeed() {
   }, [loadError, messages.feed.failedToLoad]);
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
+  const hasActiveSearch = Boolean(q.trim());
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
     rootMargin: "800px",
   });
@@ -176,8 +178,34 @@ export function PetFeed() {
           </>
         ) : items.length === 0 ? (
           <Reveal>
-            <div className="glass-panel rounded-[28px] p-10 text-center text-sm text-muted-foreground md:col-span-2 xl:col-span-3">
-              {messages.feed.empty}
+            <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center md:col-span-2 xl:col-span-3">
+              <div className="absolute left-8 top-8 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
+              <div className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-pink-400/10 blur-2xl" />
+              <div className="relative mx-auto flex h-18 w-18 items-center justify-center rounded-full border border-border/60 bg-background/75">
+                <div className="absolute -right-2 -top-2 rounded-full bg-background p-2 shadow-sm">
+                  <Sparkles className="h-4 w-4 text-amber-500" />
+                </div>
+                <Search className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em]">
+                {hasActiveSearch ? messages.feed.emptySearchTitle : messages.feed.empty}
+              </h3>
+              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                {hasActiveSearch ? messages.feed.emptySearchDescription : messages.feed.empty}
+              </p>
+              {hasActiveSearch ? (
+                <div className="mt-5 flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setQ("");
+                      setType("ALL");
+                    }}
+                  >
+                    {messages.feed.refresh}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </Reveal>
         ) : (

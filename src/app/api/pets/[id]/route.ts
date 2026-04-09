@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
-import { getSession, requireUser } from "@/lib/auth-server";
+import { canManageOwnedResource, getSession, requireUser } from "@/lib/auth-server";
 import { ApiError, handleRouteError } from "@/lib/http";
 import { updatePetSchema } from "@/lib/validators/pets";
 
 type Params = { params: Promise<{ id: string }> };
+
+function getBirthDateParts(year: number, month: number) {
+  const birthDate = new Date(Date.UTC(year, month - 1, 1));
+  const now = new Date();
+  let age = now.getUTCFullYear() - birthDate.getUTCFullYear();
+  if (now.getUTCMonth() < birthDate.getUTCMonth()) age -= 1;
+  return { birthDate, age: Math.max(age, 0) };
+}
 
 export async function GET(_req: NextRequest, { params }: Params) {
   try {
@@ -50,14 +58,25 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       select: { ownerId: true },
     });
     if (!existing) throw new ApiError(404, "Pet not found", "NOT_FOUND");
-    if (existing.ownerId !== user.id) throw new ApiError(403, "Forbidden", "FORBIDDEN");
+    if (!canManageOwnedResource(user, existing.ownerId)) {
+      throw new ApiError(403, "Forbidden", "FORBIDDEN");
+    }
+
+    const nextBirthDate =
+      input.birthYear !== undefined && input.birthMonth !== undefined
+        ? getBirthDateParts(input.birthYear, input.birthMonth)
+        : null;
 
     const updated = await prisma.pet.update({
       where: { id },
       data: {
         name: input.name,
-        age: input.age,
+        age: nextBirthDate?.age,
+        birthDate: nextBirthDate?.birthDate,
         type: input.type,
+        gender: input.gender,
+        breed: input.breed,
+        isNeutered: input.isNeutered,
         description: input.description,
         ...(input.images
           ? {
@@ -96,7 +115,9 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
       select: { ownerId: true },
     });
     if (!existing) throw new ApiError(404, "Pet not found", "NOT_FOUND");
-    if (existing.ownerId !== user.id) throw new ApiError(403, "Forbidden", "FORBIDDEN");
+    if (!canManageOwnedResource(user, existing.ownerId)) {
+      throw new ApiError(403, "Forbidden", "FORBIDDEN");
+    }
 
     await prisma.pet.delete({ where: { id } });
     return NextResponse.json({ ok: true, data: { id } });

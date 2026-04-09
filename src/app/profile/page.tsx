@@ -9,7 +9,7 @@ export default async function ProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
-      <ProfileClient userId={session.user.id} />
+      <ProfileClient userId={session.user.id} viewerId={session.user.id} />
     </div>
   );
 }

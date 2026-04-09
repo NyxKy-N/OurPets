@@ -6,6 +6,14 @@ import { requireUser } from "@/lib/auth-server";
 import { createPetSchema, listPetsQuerySchema } from "@/lib/validators/pets";
 import type { Prisma } from "@prisma/client";
 
+function getBirthDateParts(year: number, month: number) {
+  const birthDate = new Date(Date.UTC(year, month - 1, 1));
+  const now = new Date();
+  let age = now.getUTCFullYear() - birthDate.getUTCFullYear();
+  if (now.getUTCMonth() < birthDate.getUTCMonth()) age -= 1;
+  return { birthDate, age: Math.max(age, 0) };
+}
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -63,13 +71,18 @@ export async function POST(req: Request) {
     const user = await requireUser();
     const json = await req.json();
     const input = createPetSchema.parse(json);
+    const { birthDate, age } = getBirthDateParts(input.birthYear, input.birthMonth);
 
     const created = await prisma.pet.create({
       data: {
         ownerId: user.id,
         name: input.name,
-        age: input.age,
+        age,
+        birthDate,
         type: input.type,
+        gender: input.gender,
+        breed: input.breed,
+        isNeutered: input.isNeutered,
         description: input.description,
         images: {
           create: input.images.map((img) => ({

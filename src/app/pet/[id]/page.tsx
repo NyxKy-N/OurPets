@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: pet.name,
-    description: `${pet.name} · ${formatPetAge(locale, pet.age)} · ${messages.meta.petDescription} ${pet.owner.name ?? messages.common.user}`,
+    description: `${pet.name} · ${formatPetAge(locale, pet.birthDate, pet.age)} · ${messages.meta.petDescription} ${pet.owner.name ?? messages.common.user}`,
     openGraph: {
       title: `OurPets · ${pet.name}`,
       description: pet.description,
@@ -34,6 +34,7 @@ export default async function PetPage({ params }: PageProps) {
   const { id } = await params;
   const session = await getSession();
   const viewerId = session?.user?.id ?? null;
+  const viewerIsAdmin = session?.user?.isAdmin ?? false;
 
   const pet = await prisma.pet.findUnique({
     where: { id },
@@ -59,6 +60,7 @@ export default async function PetPage({ params }: PageProps) {
       <PetDetail
         initialPet={{ ...pet, likedByMe }}
         viewerId={viewerId}
+        viewerIsAdmin={viewerIsAdmin}
       />
     </div>
   );

@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
-import { formatPetAge, getPetTypeLabel } from "@/lib/i18n";
+import { formatPetAge, getPetGenderLabel, getPetTypeLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Reveal } from "@/components/ui/reveal";
@@ -26,7 +26,11 @@ type PetDetailPayload = {
   id: string;
   name: string;
   age: number;
+  birthDate?: string | Date | null;
   type: "DOG" | "CAT" | "OTHER";
+  gender?: "MALE" | "FEMALE" | "UNKNOWN" | null;
+  breed?: string | null;
+  isNeutered?: boolean | null;
   description: string;
   ownerId: string;
   createdAt: string | Date;
@@ -39,9 +43,11 @@ type PetDetailPayload = {
 export function PetDetail({
   initialPet,
   viewerId,
+  viewerIsAdmin,
 }: {
   initialPet: PetDetailPayload;
   viewerId: string | null;
+  viewerIsAdmin: boolean;
 }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -49,7 +55,25 @@ export function PetDetail({
   const [pet, setPet] = React.useState(initialPet);
 
   const hero = pet.images[0]?.url;
-  const isOwner = viewerId && viewerId === pet.ownerId;
+  const canManagePet = Boolean(viewerId && (viewerId === pet.ownerId || viewerIsAdmin));
+  const ownerHref = viewerId === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
+  const birthDateLabel = pet.birthDate
+    ? new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(new Date(pet.birthDate))
+    : null;
+  const detailBadges = [
+    { label: messages.petDetail.birthLabel, value: birthDateLabel },
+    { label: messages.petDetail.breedLabel, value: pet.breed || null },
+    { label: messages.petDetail.genderLabel, value: getPetGenderLabel(locale, pet.gender) },
+    {
+      label: messages.petDetail.neuteredLabel,
+      value:
+        pet.isNeutered === null || pet.isNeutered === undefined
+          ? messages.petDetail.neuteredUnknown
+          : pet.isNeutered
+            ? messages.petDetail.neuteredYes
+            : messages.petDetail.neuteredNo,
+    },
+  ].filter((item) => Boolean(item.value));
 
   const toggleLike = useMutation({
     mutationFn: () => apiFetch<{ liked: boolean; likeCount: number }>("/api/likes", {
@@ -94,17 +118,30 @@ export function PetDetail({
     <div className="space-y-6">
       <Reveal>
         <Card className="overflow-hidden rounded-[34px] p-1">
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] bg-muted sm:h-[28rem] sm:aspect-auto">
-          {hero ? (
-            <Image
-              src={hero}
-              alt={pet.name}
-              fill
-              className="object-cover transition-transform duration-700 ease-out hover:scale-[1.02]"
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              priority
-            />
-          ) : null}
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] bg-muted sm:h-[30rem] sm:aspect-auto">
+            {hero ? (
+              <>
+                <Image
+                  src={hero}
+                  alt={pet.name}
+                  fill
+                  className="scale-110 object-cover opacity-55 blur-2xl"
+                  sizes="(max-width: 1024px) 100vw, 1024px"
+                  priority
+                />
+                <div className="absolute inset-0 bg-black/10" />
+                <div className="absolute inset-4 sm:inset-6">
+                  <Image
+                    src={hero}
+                    alt={pet.name}
+                    fill
+                    className="object-contain object-center transition-transform duration-700 ease-out hover:scale-[1.02]"
+                    sizes="(max-width: 1024px) 100vw, 1024px"
+                    priority
+                  />
+                </div>
+              </>
+            ) : null}
             <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/5 to-transparent" />
           </div>
           <div className="p-5 sm:p-7">
@@ -118,26 +155,39 @@ export function PetDetail({
                 </h1>
                 <div className="mt-3 flex flex-wrap gap-2 text-sm leading-6 text-muted-foreground">
                   <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl">
-                    {formatPetAge(locale, pet.age)}
+                    {formatPetAge(locale, pet.birthDate, pet.age)}
                   </span>
-                  <span className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl">
+                  <Link
+                    href={ownerHref}
+                    prefetch={false}
+                    className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl transition-colors hover:border-primary/50 hover:text-foreground"
+                  >
                     {messages.petCard.owner}:{" "}
                     <span className="font-medium text-foreground">
                       {pet.owner.name ?? messages.common.unknown}
                     </span>
-                  </span>
+                  </Link>
+                  {detailBadges.map((item) => (
+                    <span
+                      key={item.label}
+                      className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl"
+                    >
+                      {item.label}:{" "}
+                      <span className="font-medium text-foreground">{item.value}</span>
+                    </span>
+                  ))}
                 </div>
               </div>
               <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                 <Button
                   variant={pet.likedByMe ? "secondary" : "outline"}
                   onClick={() => toggleLike.mutate()}
-                  className="w-full gap-2 sm:w-auto"
+                  className="w-full gap-2 border-rose-200/70 text-rose-500 hover:bg-rose-500/10 hover:text-rose-500 sm:w-auto"
                 >
-                  <Heart className={pet.likedByMe ? "fill-current" : ""} />
+                  <Heart className={pet.likedByMe ? "fill-rose-500 text-rose-500" : "text-rose-500"} />
                   {pet._count.likes}
                 </Button>
-                {isOwner ? (
+                {canManagePet ? (
                   <>
                     <Button asChild variant="outline" className="w-full gap-2 sm:w-auto">
                       <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
@@ -192,7 +242,12 @@ export function PetDetail({
       </Reveal>
 
       <Reveal delay={100}>
-        <Comments petId={pet.id} viewerId={viewerId} initialCount={pet._count.comments} />
+        <Comments
+          petId={pet.id}
+          viewerId={viewerId}
+          viewerIsAdmin={viewerIsAdmin}
+          initialCount={pet._count.comments}
+        />
       </Reveal>
     </div>
   );

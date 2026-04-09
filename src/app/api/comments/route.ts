@@ -12,12 +12,18 @@ export async function GET(req: Request) {
 
     const take = query.limit + 1;
     const comments = await prisma.comment.findMany({
-      where: { petId: query.petId },
+      where: { petId: query.petId, parentId: null },
       take,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       include: {
         user: { select: { id: true, name: true, image: true } },
+        replies: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          include: {
+            user: { select: { id: true, name: true, image: true } },
+          },
+        },
       },
     });
 
@@ -36,14 +42,32 @@ export async function POST(req: Request) {
     const user = await requireUser();
     const json = await req.json();
     const input = createCommentSchema.parse(json);
+    let parentId: string | undefined;
+
+    if (input.parentId) {
+      const parent = await prisma.comment.findUnique({
+        where: { id: input.parentId },
+        select: { id: true, petId: true, parentId: true },
+      });
+
+      if (!parent || parent.petId !== input.petId) {
+        return NextResponse.json(
+          { ok: false, error: { code: "NOT_FOUND", message: "Comment not found" } },
+          { status: 404 }
+        );
+      }
+
+      parentId = parent.parentId ?? parent.id;
+    }
 
     const created = await prisma.comment.create({
       data: {
         petId: input.petId,
         userId: user.id,
+        parentId,
         content: input.content,
       },
-      include: { user: { select: { id: true, name: true, image: true } } },
+      include: { user: { select: { id: true, name: true, image: true } }, replies: true },
     });
 
     return NextResponse.json({ ok: true, data: created }, { status: 201 });
@@ -51,4 +75,3 @@ export async function POST(req: Request) {
     return handleRouteError(err);
   }
 }
-

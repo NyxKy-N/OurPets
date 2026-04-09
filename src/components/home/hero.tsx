@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
+import { ArrowUpRight, PawPrint, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -80,12 +81,37 @@ export function Hero({ messages }: { messages: Messages }) {
             </Reveal>
 
             <Reveal delay={210}>
-              <div className="glass-panel rounded-[30px] p-5 sm:p-6 opacity-70">
-                <div className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.header.addPet}
+              <div className="glass-panel-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
+                <div className="absolute -right-4 top-2 h-20 w-20 rounded-full bg-primary/16 blur-3xl" />
+                <div className="absolute bottom-0 left-0 h-16 w-16 rounded-full bg-foreground/6 blur-2xl" />
+                <div className="relative">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium tracking-[0.18em] text-primary uppercase">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {messages.header.addPet}
+                  </div>
+                  <div className="mt-4 flex items-start justify-between gap-4">
+                    <div>
+                      <div className="text-xl font-semibold tracking-tight">{messages.home.ctaTitle}</div>
+                      <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {messages.home.ctaDescription}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
+                      <PawPrint className="h-5 w-5 text-primary" />
+                    </div>
+                  </div>
+                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+                    <Button size="sm" onClick={handleAddPetClick} disabled={status === "loading"} className="gap-2">
+                      {messages.home.ctaPrimary}
+                      <ArrowUpRight className="h-4 w-4" />
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link href="/discover" prefetch={false}>
+                        {messages.home.ctaSecondary}
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
-                <div className="mt-3 text-lg font-semibold tracking-tight">{messages.home.title}</div>
-                <div className="mt-2 text-sm leading-6 text-muted-foreground">{messages.home.description}</div>
               </div>
             </Reveal>
           </div>
