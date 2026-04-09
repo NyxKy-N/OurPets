@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 
+import { useI18n } from "@/app/providers";
+import { formatCompactLabel, formatPetAge } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 
@@ -15,13 +19,14 @@ export type PetFeedItem = {
 };
 
 export function PetCard({ pet, className }: { pet: PetFeedItem; className?: string }) {
+  const { locale, messages } = useI18n();
   const img = pet.images?.[0];
 
   return (
-    <Link href={`/pet/${pet.id}`} className={cn("block", className)}>
+    <Link href={`/pet/${pet.id}`} prefetch={false} className={cn("block", className)}>
       <Card className="transition-colors hover:bg-accent/40">
-        <div className="flex gap-4 p-4">
-          <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row">
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-muted sm:h-24 sm:w-24 sm:shrink-0 sm:aspect-square">
             {img ? (
               <Image
                 src={img.url}
@@ -34,20 +39,24 @@ export function PetCard({ pet, className }: { pet: PetFeedItem; className?: stri
             ) : null}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
-                <div className="truncate text-base font-semibold">{pet.name}</div>
+                <div className="truncate text-base font-semibold sm:text-lg">{pet.name}</div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  {pet.age} {pet.age === 1 ? "year" : "years"} old
+                  {formatPetAge(locale, pet.age)}
                 </div>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Owner:{" "}
-                  <span className="text-foreground">{pet.owner.name ?? "Unknown"}</span>
+                  {messages.petCard.owner}:{" "}
+                  <span className="text-foreground">
+                    {pet.owner.name ?? messages.common.unknown}
+                  </span>
                 </div>
               </div>
-              <div className="hidden shrink-0 text-right text-xs text-muted-foreground sm:block">
-                <div>{pet._count.likes} likes</div>
-                <div>{pet._count.comments} comments</div>
+              <div className="flex shrink-0 flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground sm:flex-col sm:items-end sm:text-right">
+                <div>{formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}</div>
+                <div>
+                  {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
+                </div>
               </div>
             </div>
           </div>
@@ -56,4 +65,3 @@ export function PetCard({ pet, className }: { pet: PetFeedItem; className?: stri
     </Link>
   );
 }
-

@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,13 +16,14 @@ import { PetCardSkeleton } from "@/components/pets/pet-card-skeleton";
 type UserMe = { id: string; name: string | null; email: string; image: string | null; createdAt: string };
 type PetsPage = { items: PetFeedItem[]; nextCursor: string | null };
 
-function errorMessage(err: unknown) {
+function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
-  return "Something went wrong";
+  return fallback;
 }
 
 export function ProfileClient({ userId }: { userId: string }) {
   const qc = useQueryClient();
+  const { messages } = useI18n();
 
   const me = useQuery({
     queryKey: ["me"],
@@ -36,11 +39,11 @@ export function ProfileClient({ userId }: { userId: string }) {
     mutationFn: () =>
       apiFetch<UserMe>("/api/user", { method: "PATCH", body: JSON.stringify({ name }) }),
     onSuccess: async (data) => {
-      toast.success("Profile updated");
+      toast.success(messages.profile.profileUpdated);
       await qc.invalidateQueries({ queryKey: ["me"] });
       setName(data.name ?? "");
     },
-    onError: (err: unknown) => toast.error(errorMessage(err) ?? "Failed to update profile"),
+    onError: (err: unknown) => toast.error(errorMessage(err, messages.profile.failedToUpdate)),
   });
 
   const pets = useInfiniteQuery({
@@ -60,34 +63,37 @@ export function ProfileClient({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <Card className="p-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
+      <Card className="p-4 sm:p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">{messages.profile.title}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Update your display name and manage your pets.
+          {messages.profile.description}
         </p>
 
-        <div className="mt-6 grid gap-2 sm:grid-cols-[1fr_auto] sm:items-end">
+        <div className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
           <div className="space-y-2">
-            <label className="text-sm font-medium">Display name</label>
+            <label className="text-sm font-medium">{messages.profile.displayName}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
             <div className="text-xs text-muted-foreground">
-              Signed in as: {me.data?.email ?? "…"}
+              {messages.profile.signedInAs}: {me.data?.email ?? "…"}
             </div>
           </div>
           <Button
             onClick={() => saveName.mutate()}
             disabled={saveName.isPending || !name.trim() || name === (me.data?.name ?? "")}
+            className="w-full sm:w-auto"
           >
-            Save
+            {messages.common.save}
           </Button>
         </div>
       </Card>
 
       <section className="space-y-4">
-        <div className="flex items-end justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">Your pets</h2>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">{messages.profile.yourPets}</h2>
           <Button asChild variant="outline">
-            <a href="/pets/new">Add pet</a>
+            <Link href="/pets/new" prefetch={false}>
+              {messages.header.addPet}
+            </Link>
           </Button>
         </div>
 
@@ -99,7 +105,7 @@ export function ProfileClient({ userId }: { userId: string }) {
             </>
           ) : petItems.length === 0 ? (
             <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
-              You haven&apos;t added any pets yet.
+            {messages.profile.empty}
             </div>
           ) : (
             petItems.map((p) => <PetCard key={p.id} pet={p} />)
@@ -113,7 +119,7 @@ export function ProfileClient({ userId }: { userId: string }) {
               onClick={() => pets.fetchNextPage()}
               disabled={pets.isFetchingNextPage}
             >
-              {pets.isFetchingNextPage ? "Loading…" : "Load more"}
+            {pets.isFetchingNextPage ? messages.common.loading : messages.comments.loadMore}
             </Button>
           </div>
         ) : null}

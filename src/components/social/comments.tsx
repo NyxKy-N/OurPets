@@ -5,7 +5,9 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
+import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
+import { formatDateTime } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,9 +23,9 @@ type CommentItem = {
 };
 type CommentsPage = { items: CommentItem[]; nextCursor: string | null };
 
-function errorMessage(err: unknown) {
+function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
-  return "Something went wrong";
+  return fallback;
 }
 
 export function Comments({
@@ -36,6 +38,7 @@ export function Comments({
   initialCount: number;
 }) {
   const qc = useQueryClient();
+  const { locale, messages } = useI18n();
   const [content, setContent] = React.useState("");
 
   const query = useInfiniteQuery({
@@ -63,16 +66,16 @@ export function Comments({
     },
     onSuccess: async () => {
       setContent("");
-      toast.success("Comment added");
+      toast.success(messages.comments.commentAdded);
       await qc.invalidateQueries({ queryKey: ["comments", petId] });
     },
     onError: (err: unknown) => {
       if (err instanceof Error && err.message === "UNAUTHENTICATED") {
-        toast.error("Please sign in to comment.");
+        toast.error(messages.comments.signInToComment);
         return;
       }
       if (err instanceof Error && err.message === "EMPTY") return;
-      toast.error(errorMessage(err) ?? "Failed to add comment");
+      toast.error(errorMessage(err, messages.comments.failedToAdd));
     },
   });
 
@@ -80,26 +83,28 @@ export function Comments({
     mutationFn: (commentId: string) =>
       apiFetch<{ id: string }>(`/api/comments/${commentId}`, { method: "DELETE" }),
     onSuccess: async () => {
-      toast.success("Comment deleted");
+      toast.success(messages.comments.commentDeleted);
       await qc.invalidateQueries({ queryKey: ["comments", petId] });
     },
-    onError: (err: unknown) => toast.error(errorMessage(err) ?? "Failed to delete comment"),
+    onError: (err: unknown) => toast.error(errorMessage(err, messages.comments.failedToDelete)),
   });
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold tracking-tight">Comments</h2>
+    <Card className="p-4 sm:p-6">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-semibold tracking-tight">{messages.comments.title}</h2>
         <div className="text-xs text-muted-foreground">
-          {items.length || query.isLoading ? items.length : initialCount} total
+          {items.length || query.isLoading ? items.length : initialCount} {messages.common.total}
         </div>
       </div>
 
       <div className="mt-4 space-y-2">
         <Textarea
-          placeholder={viewerId ? "Write a comment…" : "Sign in to comment…"}
+          placeholder={
+            viewerId ? messages.comments.writePlaceholder : messages.comments.signInPlaceholder
+          }
           value={content}
           onChange={(e) => setContent(e.target.value)}
           disabled={!viewerId || addComment.isPending}
@@ -109,7 +114,7 @@ export function Comments({
             onClick={() => addComment.mutate()}
             disabled={!viewerId || addComment.isPending || !content.trim()}
           >
-            Post
+            {messages.comments.post}
           </Button>
         </div>
       </div>
@@ -122,7 +127,7 @@ export function Comments({
           </>
         ) : items.length === 0 ? (
           <div className="rounded-lg border bg-background p-8 text-center text-sm text-muted-foreground">
-            No comments yet.
+            {messages.comments.empty}
           </div>
         ) : (
           items.map((c) => (
@@ -135,10 +140,10 @@ export function Comments({
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">
-                      {c.user.name ?? "User"}
+                      {c.user.name ?? messages.common.user}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString()}
+                      {formatDateTime(locale, c.createdAt)}
                     </div>
                   </div>
                   {viewerId === c.userId ? (
@@ -147,7 +152,7 @@ export function Comments({
                       size="icon"
                       onClick={() => deleteComment.mutate(c.id)}
                       disabled={deleteComment.isPending}
-                      aria-label="Delete comment"
+                      aria-label={messages.comments.deleteLabel}
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
@@ -169,7 +174,7 @@ export function Comments({
             onClick={() => query.fetchNextPage()}
             disabled={query.isFetchingNextPage}
           >
-            {query.isFetchingNextPage ? "Loading…" : "Load more"}
+            {query.isFetchingNextPage ? messages.common.loading : messages.comments.loadMore}
           </Button>
         </div>
       ) : null}

@@ -8,15 +8,17 @@ import { toast } from "sonner";
 import { Heart, Pencil, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
+import { formatPetAge, getPetTypeLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Comments } from "@/components/social/comments";
 
-function errorMessage(err: unknown) {
+function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
-  return "Something went wrong";
+  return fallback;
 }
 
 type PetDetailPayload = {
@@ -42,6 +44,7 @@ export function PetDetail({
 }) {
   const router = useRouter();
   const qc = useQueryClient();
+  const { locale, messages } = useI18n();
   const [pet, setPet] = React.useState(initialPet);
 
   const hero = pet.images[0]?.url;
@@ -54,7 +57,7 @@ export function PetDetail({
     }),
     onMutate: async () => {
       if (!viewerId) {
-        toast.error("Please sign in to like pets.");
+        toast.error(messages.petDetail.signInToLike);
         throw new Error("UNAUTHENTICATED");
       }
       setPet((p) => ({
@@ -68,7 +71,7 @@ export function PetDetail({
     },
     onError: (err: unknown) => {
       if (err instanceof Error && err.message === "UNAUTHENTICATED") return;
-      toast.error(errorMessage(err) ?? "Failed to update like");
+      toast.error(errorMessage(err, messages.petDetail.failedToUpdateLike));
       setPet(initialPet);
     },
     onSuccess: (res) => {
@@ -79,17 +82,17 @@ export function PetDetail({
   const deletePet = useMutation({
     mutationFn: () => apiFetch<{ id: string }>(`/api/pets/${pet.id}`, { method: "DELETE" }),
     onSuccess: async () => {
-      toast.success("Pet deleted");
+      toast.success(messages.petDetail.petDeleted);
       await qc.invalidateQueries({ queryKey: ["pets"] });
       router.push("/");
     },
-    onError: (err: unknown) => toast.error(errorMessage(err) ?? "Failed to delete"),
+    onError: (err: unknown) => toast.error(errorMessage(err, messages.petDetail.failedToDelete)),
   });
 
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden">
-        <div className="relative h-72 w-full bg-muted sm:h-96">
+        <div className="relative aspect-[4/3] w-full bg-muted sm:h-96 sm:aspect-auto">
           {hero ? (
             <Image
               src={hero}
@@ -101,41 +104,44 @@ export function PetDetail({
             />
           ) : null}
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h1 className="truncate text-3xl font-semibold tracking-tight">{pet.name}</h1>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {pet.age} {pet.age === 1 ? "year" : "years"} old · {pet.type.toLowerCase()} · Owner:{" "}
-                <span className="text-foreground">{pet.owner.name ?? "Unknown"}</span>
+              <h1 className="break-words text-2xl font-semibold tracking-tight sm:text-3xl">
+                {pet.name}
+              </h1>
+              <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                {formatPetAge(locale, pet.age)} · {getPetTypeLabel(locale, pet.type)} ·{" "}
+                {messages.petCard.owner}:{" "}
+                <span className="text-foreground">{pet.owner.name ?? messages.common.unknown}</span>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
               <Button
                 variant={pet.likedByMe ? "secondary" : "outline"}
                 onClick={() => toggleLike.mutate()}
-                className="gap-2"
+                className="w-full gap-2 sm:w-auto"
               >
                 <Heart className={pet.likedByMe ? "fill-current" : ""} />
                 {pet._count.likes}
               </Button>
               {isOwner ? (
                 <>
-                  <Button asChild variant="outline" className="gap-2">
-                    <Link href={`/pet/${pet.id}/edit`}>
+                  <Button asChild variant="outline" className="w-full gap-2 sm:w-auto">
+                    <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
                       <Pencil className="h-4 w-4" />
-                      Edit
+                      {messages.petDetail.edit}
                     </Link>
                   </Button>
                   <Button
                     variant="destructive"
-                    className="gap-2"
+                    className="w-full gap-2 sm:w-auto"
                     onClick={() => {
-                      if (confirm("Delete this pet? This cannot be undone.")) deletePet.mutate();
+                      if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
-                    Delete
+                    {messages.petDetail.delete}
                   </Button>
                 </>
               ) : null}
@@ -150,7 +156,7 @@ export function PetDetail({
           {pet.images.length > 1 ? (
             <>
               <Separator className="my-6" />
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
                 {pet.images.slice(1).map((img) => (
                   <div
                     key={img.id}
@@ -158,7 +164,7 @@ export function PetDetail({
                   >
                     <Image
                       src={img.url}
-                      alt={`${pet.name} photo`}
+                      alt={`${pet.name} ${messages.petDetail.galleryAlt}`}
                       fill
                       className="object-cover"
                       sizes="(max-width: 1024px) 50vw, 300px"

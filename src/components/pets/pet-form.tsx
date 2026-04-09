@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { X } from "lucide-react";
 
+import { useI18n } from "@/app/providers";
 import { createPetSchema } from "@/lib/validators/pets";
 import { apiFetch } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
@@ -42,9 +43,9 @@ type CloudinaryUploadResponse = {
   error?: { message?: string };
 };
 
-function errorMessage(err: unknown) {
+function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
-  return "Something went wrong";
+  return fallback;
 }
 
 async function getUploadSignature(): Promise<CloudinarySignature> {
@@ -86,6 +87,7 @@ export function PetForm({
 }) {
   const router = useRouter();
   const qc = useQueryClient();
+  const { messages } = useI18n();
 
   const [images, setImages] = React.useState<UploadedImage[]>(initial?.images ?? []);
   const [uploading, setUploading] = React.useState(false);
@@ -115,17 +117,17 @@ export function PetForm({
       });
     },
     onSuccess: async (pet) => {
-      toast.success(mode === "create" ? "Pet created" : "Pet updated");
+      toast.success(mode === "create" ? messages.form.petCreated : messages.form.petUpdated);
       await qc.invalidateQueries({ queryKey: ["pets"] });
       router.push(`/pet/${pet.id}`);
     },
-    onError: (err: unknown) => toast.error(errorMessage(err) ?? "Failed to save pet"),
+    onError: (err: unknown) => toast.error(errorMessage(err, messages.form.failedToSave)),
   });
 
   async function onPickFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
     if (images.length + files.length > 8) {
-      toast.error("You can upload up to 8 images.");
+      toast.error(messages.form.maxImages);
       return;
     }
 
@@ -138,21 +140,21 @@ export function PetForm({
         uploaded.push(await uploadToCloudinary(file, sig));
       }
       setImages((prev) => [...prev, ...uploaded]);
-      toast.success("Images uploaded");
+      toast.success(messages.form.imagesUploaded);
     } catch (err: unknown) {
-      toast.error(errorMessage(err) ?? "Upload failed");
+      toast.error(errorMessage(err, messages.form.uploadFailed));
     } finally {
       setUploading(false);
     }
   }
 
   return (
-    <Card className="p-6">
+    <Card className="p-4 sm:p-6">
       <h1 className="text-2xl font-semibold tracking-tight">
-        {mode === "create" ? "Add a pet" : "Edit pet"}
+        {mode === "create" ? messages.form.createTitle : messages.form.editTitle}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Add a great photo and a short description. Images are stored on Cloudinary.
+        {messages.form.description}
       </p>
 
       <form
@@ -160,8 +162,8 @@ export function PetForm({
         onSubmit={form.handleSubmit((values) => submit.mutate(values))}
       >
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Name</label>
-          <Input {...form.register("name")} placeholder="e.g. Mochi" />
+          <label className="text-sm font-medium">{messages.form.name}</label>
+          <Input {...form.register("name")} placeholder={messages.form.namePlaceholder} />
           {form.formState.errors.name ? (
             <p className="text-xs text-destructive">{form.formState.errors.name.message}</p>
           ) : null}
@@ -169,7 +171,7 @@ export function PetForm({
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Age</label>
+            <label className="text-sm font-medium">{messages.form.age}</label>
             <Input
               type="number"
               min={0}
@@ -182,24 +184,24 @@ export function PetForm({
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-medium">Type</label>
+            <label className="text-sm font-medium">{messages.form.type}</label>
             <select
               className="h-10 rounded-md border border-input bg-background px-3 text-sm"
               {...form.register("type")}
             >
-              <option value="DOG">Dog</option>
-              <option value="CAT">Cat</option>
-              <option value="OTHER">Other</option>
+              <option value="DOG">{messages.form.dog}</option>
+              <option value="CAT">{messages.form.cat}</option>
+              <option value="OTHER">{messages.form.other}</option>
             </select>
           </div>
         </div>
 
         <div className="grid gap-2">
-          <label className="text-sm font-medium">Description</label>
+          <label className="text-sm font-medium">{messages.form.descriptionLabel}</label>
           <Textarea
             rows={6}
             {...form.register("description")}
-            placeholder="What makes them special?"
+            placeholder={messages.form.descriptionPlaceholder}
           />
           {form.formState.errors.description ? (
             <p className="text-xs text-destructive">
@@ -210,7 +212,7 @@ export function PetForm({
 
         <div className="grid gap-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">Images</label>
+            <label className="text-sm font-medium">{messages.form.images}</label>
             <div className="text-xs text-muted-foreground">{images.length}/8</div>
           </div>
           <Input
@@ -222,15 +224,15 @@ export function PetForm({
           />
           {images.length === 0 ? (
             <div className="rounded-lg border bg-background p-6 text-center text-sm text-muted-foreground">
-              Add at least 1 image.
+              {messages.form.addOneImage}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {images.map((img) => (
                 <div key={img.publicId} className="relative aspect-square overflow-hidden rounded-xl">
                   <Image
                     src={img.url}
-                    alt="Uploaded pet"
+                    alt={messages.form.images}
                     fill
                     className="object-cover"
                     sizes="(max-width: 640px) 50vw, 200px"
@@ -239,7 +241,7 @@ export function PetForm({
                     type="button"
                     onClick={() => setImages((prev) => prev.filter((i) => i.publicId !== img.publicId))}
                     className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/75"
-                    aria-label="Remove image"
+                    aria-label={messages.form.removeImage}
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -249,12 +251,20 @@ export function PetForm({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
-            Cancel
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
+            {messages.common.cancel}
           </Button>
-          <Button type="submit" disabled={submit.isPending || uploading || images.length === 0}>
-            {submit.isPending ? "Saving…" : mode === "create" ? "Create" : "Save changes"}
+          <Button
+            type="submit"
+            disabled={submit.isPending || uploading || images.length === 0}
+            className="w-full sm:w-auto"
+          >
+            {submit.isPending
+              ? messages.form.saving
+              : mode === "create"
+                ? messages.form.create
+                : messages.form.saveChanges}
           </Button>
         </div>
       </form>

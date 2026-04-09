@@ -4,21 +4,24 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/auth-server";
 import { PetDetail } from "@/components/pets/pet-detail";
+import { formatPetAge } from "@/lib/i18n";
+import { getRequestI18n } from "@/lib/i18n-server";
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
+  const { locale, messages } = await getRequestI18n();
   const pet = await prisma.pet.findUnique({
     where: { id },
     include: { images: { take: 1, orderBy: { createdAt: "asc" } }, owner: true },
   });
-  if (!pet) return { title: "Pet" };
+  if (!pet) return { title: messages.meta.petFallbackTitle };
   const hero = pet.images[0]?.url;
 
   return {
     title: pet.name,
-    description: `${pet.name} · ${pet.age} years old · posted by ${pet.owner.name ?? "a user"}`,
+    description: `${pet.name} · ${formatPetAge(locale, pet.age)} · ${messages.meta.petDescription} ${pet.owner.name ?? messages.common.user}`,
     openGraph: {
       title: `OurPets · ${pet.name}`,
       description: pet.description,
@@ -52,7 +55,7 @@ export default async function PetPage({ params }: PageProps) {
     : false;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
       <PetDetail
         initialPet={{ ...pet, likedByMe }}
         viewerId={viewerId}
@@ -60,4 +63,3 @@ export default async function PetPage({ params }: PageProps) {
     </div>
   );
 }
-

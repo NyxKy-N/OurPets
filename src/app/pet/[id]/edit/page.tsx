@@ -19,7 +19,7 @@ export default async function EditPetPage({ params }: PageProps) {
   if (pet.ownerId !== session.user.id) redirect(`/pet/${id}`);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10">
+    <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:py-8 lg:py-10">
       <PetForm
         mode="edit"
         petId={id}

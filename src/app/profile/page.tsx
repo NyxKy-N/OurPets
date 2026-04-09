@@ -8,9 +8,8 @@ export default async function ProfilePage() {
   if (!session?.user?.id) redirect("/");
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-6 sm:py-8 lg:py-10">
       <ProfileClient userId={session.user.id} />
     </div>
   );
 }
-

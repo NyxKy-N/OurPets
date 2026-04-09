@@ -4,6 +4,7 @@ import * as React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { PetCard, type PetFeedItem } from "@/components/pets/pet-card";
 import { PetCardSkeleton } from "@/components/pets/pet-card-skeleton";
@@ -30,6 +31,7 @@ function useIntersectionObserver<T extends Element>(options?: IntersectionObserv
 }
 
 export function PetFeed() {
+  const { messages } = useI18n();
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
 
@@ -49,8 +51,8 @@ export function PetFeed() {
 
   const loadError = query.error;
   React.useEffect(() => {
-    if (loadError) toast.error(loadError.message ?? "Failed to load pets");
-  }, [loadError]);
+    if (loadError) toast.error(loadError.message ?? messages.feed.failedToLoad);
+  }, [loadError, messages.feed.failedToLoad]);
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
@@ -67,20 +69,21 @@ export function PetFeed() {
 
   return (
     <section className="mt-10">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <Input
-            placeholder="Search pets by name…"
+            placeholder={messages.feed.searchPlaceholder}
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            className="max-w-md"
+            className="w-full sm:max-w-md"
           />
           <Button
             variant="outline"
             onClick={() => query.refetch()}
             disabled={query.isFetching}
+            className="w-full sm:w-auto"
           >
-            Refresh
+            {messages.feed.refresh}
           </Button>
         </div>
         <Tabs
@@ -88,12 +91,21 @@ export function PetFeed() {
           onValueChange={(v) => {
             if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") setType(v);
           }}
+          className="w-full lg:w-auto"
         >
-          <TabsList>
-            <TabsTrigger value="ALL">All</TabsTrigger>
-            <TabsTrigger value="DOG">Dogs</TabsTrigger>
-            <TabsTrigger value="CAT">Cats</TabsTrigger>
-            <TabsTrigger value="OTHER">Other</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4 lg:w-auto">
+            <TabsTrigger value="ALL" className="w-full">
+              {messages.feed.all}
+            </TabsTrigger>
+            <TabsTrigger value="DOG" className="w-full">
+              {messages.feed.dogs}
+            </TabsTrigger>
+            <TabsTrigger value="CAT" className="w-full">
+              {messages.feed.cats}
+            </TabsTrigger>
+            <TabsTrigger value="OTHER" className="w-full">
+              {messages.feed.other}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -107,7 +119,7 @@ export function PetFeed() {
           </>
         ) : items.length === 0 ? (
           <div className="rounded-lg border bg-card p-10 text-center text-sm text-muted-foreground">
-            No pets yet. Be the first to add one.
+            {messages.feed.empty}
           </div>
         ) : (
           items.map((pet) => <PetCard key={pet.id} pet={pet} />)
@@ -125,7 +137,7 @@ export function PetFeed() {
 
       {!query.hasNextPage && items.length > 0 ? (
         <div className="mt-6 text-center text-xs text-muted-foreground">
-          You&apos;ve reached the end.
+          {messages.feed.end}
         </div>
       ) : null}
     </section>

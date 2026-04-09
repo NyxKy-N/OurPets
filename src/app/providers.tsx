@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
 import { ThemeProvider } from "next-themes";
@@ -11,6 +12,13 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "sonner";
+
+import {
+  getMessages,
+  localeCookieName,
+  type Locale,
+  type Messages,
+} from "@/lib/i18n";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -43,22 +51,84 @@ function getQueryClient() {
   return browserQueryClient;
 }
 
+type LocaleContextValue = {
+  locale: Locale;
+  messages: Messages;
+  setLocale: (locale: Locale) => void;
+};
+
+const LocaleContext = React.createContext<LocaleContextValue | null>(null);
+
+function LocaleProvider({
+  children,
+  initialLocale,
+  initialMessages,
+}: {
+  children: React.ReactNode;
+  initialLocale: Locale;
+  initialMessages: Messages;
+}) {
+  const router = useRouter();
+  const [locale, setLocaleState] = React.useState(initialLocale);
+
+  React.useEffect(() => {
+    setLocaleState(initialLocale);
+  }, [initialLocale]);
+
+  const setLocale = React.useCallback(
+    (nextLocale: Locale) => {
+      setLocaleState(nextLocale);
+      document.cookie = `${localeCookieName}=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
+      document.documentElement.lang = nextLocale;
+      router.refresh();
+    },
+    [router]
+  );
+
+  const value = React.useMemo(
+    () => ({
+      locale,
+      messages: locale === initialLocale ? initialMessages : getMessages(locale),
+      setLocale,
+    }),
+    [initialLocale, initialMessages, locale, setLocale]
+  );
+
+  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
+}
+
+export function useI18n() {
+  const context = React.useContext(LocaleContext);
+
+  if (!context) {
+    throw new Error("useI18n must be used within Providers");
+  }
+
+  return context;
+}
+
 export function Providers({
   children,
   session,
+  initialLocale,
+  initialMessages,
 }: {
   children: React.ReactNode;
   session: Session | null;
+  initialLocale: Locale;
+  initialMessages: Messages;
 }) {
   const queryClient = getQueryClient();
 
   return (
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-          <Toaster richColors closeButton />
-        </ThemeProvider>
+        <LocaleProvider initialLocale={initialLocale} initialMessages={initialMessages}>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            {children}
+            <Toaster richColors closeButton />
+          </ThemeProvider>
+        </LocaleProvider>
         {process.env.NODE_ENV === "development" ? (
           <ReactQueryDevtools initialIsOpen={false} />
         ) : null}
