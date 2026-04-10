@@ -145,7 +145,7 @@ function FormDropdown({
   const selected = options.find((option) => option.value === value) ?? options[0];
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -158,7 +158,12 @@ function FormDropdown({
           <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" sideOffset={8} className={cn("w-[var(--radix-dropdown-menu-trigger-width)] p-1.5", contentClassName)}>
+      <DropdownMenuContent
+        align="start"
+        sideOffset={8}
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        className={cn("w-[var(--radix-dropdown-menu-trigger-width)] p-1.5", contentClassName)}
+      >
         <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
           {options.map((option) => (
             <DropdownMenuRadioItem key={option.value} value={option.value}>
