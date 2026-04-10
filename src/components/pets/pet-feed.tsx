@@ -86,7 +86,6 @@ export function PetFeed() {
             <h2 className="gradient-text text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
               {messages.discover.title}
             </h2>
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{messages.discover.description}</p>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">

@@ -75,6 +75,16 @@ export function Header() {
       label: messages.header.discover,
       active: pathname === "/discover",
     },
+    {
+      href: "/chat",
+      label: messages.header.chat,
+      active: pathname === "/chat",
+    },
+    {
+      href: "/feedback",
+      label: messages.header.feedback,
+      active: pathname === "/feedback",
+    },
   ];
 
   const utilityLinks = [

@@ -34,9 +34,12 @@ model User {
   sessions Session[]
 
   // OurPets relations
-  pets     Pet[]
-  comments Comment[]
-  likes    Like[]
+  pets         Pet[]
+  comments     Comment[]
+  likes        Like[]
+  chatMessages ChatMessage[]
+  chatReactions ChatReaction[]
+  feedback     Feedback[]
 }
 
 // NextAuth models (Prisma Adapter)
@@ -147,5 +150,53 @@ model Like {
 
   @@unique([userId, petId])
   @@index([petId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ChatMessage {
+  id            String   @id @default(cuid())
+  userId        String
+  content       String?
+  replyToId     String?
+  audioUrl      String?
+  audioPublicId String?
+  audioDuration Int?
+  createdAt     DateTime @default(now())
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replyTo  ChatMessage?  @relation("ChatMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies  ChatMessage[] @relation("ChatMessageReplies")
+  reactions ChatReaction[]
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@index([replyToId, createdAt])
+}
+
+model ChatReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  content   String
+  pageUrl   String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
   @@index([userId, createdAt])
 }

@@ -60,9 +60,6 @@ export default async function RootLayout({
                       {messages.home.eyebrow}
                     </div>
                   </div>
-                  <div className="max-w-[56ch] text-sm leading-6 text-muted-foreground">
-                    {messages.meta.appDescription}
-                  </div>
                 </div>
 
                 <nav aria-label="Footer" className="flex flex-wrap items-center gap-2 sm:justify-end">
