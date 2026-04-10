@@ -122,6 +122,15 @@ export function Providers({
 
   React.useEffect(() => {
     try {
+      const stored = localStorage.getItem("ui:reducedEffects");
+      if (stored === "1") {
+        document.documentElement.classList.add("reduced-effects");
+        return;
+      }
+      if (stored === "0") {
+        document.documentElement.classList.remove("reduced-effects");
+        return;
+      }
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       // @ts-expect-error deviceMemory is not in TS lib dom by default
       const dm: number | undefined = navigator.deviceMemory;

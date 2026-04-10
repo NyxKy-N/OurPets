@@ -134,6 +134,33 @@
 
 @layer components {
   @media (max-width: 639px) {
+    .discover-shell,
+    .discover-shell .glass-panel,
+    .discover-shell .glass-panel-strong {
+      background:
+        linear-gradient(180deg, hsl(0 0% 100% / 0.76), hsl(0 0% 100% / 0.58));
+      border-color: hsl(0 0% 100% / 0.78);
+      backdrop-filter: none;
+    }
+
+    .dark .discover-shell,
+    .dark .discover-shell .glass-panel,
+    .dark .discover-shell .glass-panel-strong {
+      background:
+        linear-gradient(180deg, hsl(0 0% 100% / 0.11), hsl(0 0% 100% / 0.065));
+      border-color: hsl(0 0% 100% / 0.14);
+      backdrop-filter: none;
+    }
+
+    .discover-fab {
+      backdrop-filter: none;
+      background-color: hsl(var(--background) / 0.72);
+    }
+
+    .dark .discover-fab {
+      background-color: hsl(var(--background) / 0.62);
+    }
+
     .content-stream [data-slot="card"] {
       background:
         linear-gradient(180deg, hsl(0 0% 100% / 0.72), hsl(0 0% 100% / 0.52));
@@ -159,9 +186,24 @@
     }
   }
 
+  .reduced-effects {
+    scroll-behavior: auto;
+  }
+
+  .reduced-effects *,
+  .reduced-effects *::before,
+  .reduced-effects *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .reduced-effects [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+  }
+
   .reduced-effects .glass-panel,
   .reduced-effects .glass-panel-strong {
-    backdrop-filter: blur(12px) saturate(120%);
+    backdrop-filter: none;
     box-shadow:
       0 10px 26px hsl(var(--foreground) / 0.07),
       0 2px 8px hsl(var(--foreground) / 0.04),
@@ -176,7 +218,7 @@
     transition:
       opacity 320ms var(--ease-soft),
       transform 320ms var(--ease-soft);
-    backdrop-filter: blur(10px) saturate(120%);
+    backdrop-filter: none;
   }
 
   .reduced-effects .soft-control {

@@ -113,7 +113,7 @@ export function PetFeed() {
 
   return (
     <section id="pet-feed" className="scroll-mt-28">
-      <div className="glass-panel rounded-[34px] p-5 sm:p-6 lg:p-7">
+      <div className="glass-panel discover-shell rounded-[34px] p-5 sm:p-6 lg:p-7">
         <div className="flex flex-col gap-6 lg:gap-7">
           <div className="space-y-2">
             <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
@@ -315,7 +315,7 @@ export function PetFeed() {
 
       <div className="fixed bottom-6 right-6 z-40 sm:hidden">
         <div
-          className={`motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
+          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
             floatingActionsOpen
               ? "translate-y-0 scale-100 opacity-100"
               : "pointer-events-none translate-y-2 scale-[0.92] opacity-0"
@@ -349,7 +349,7 @@ export function PetFeed() {
 
         <button
           type="button"
-          className={`motion-pop soft-control absolute bottom-0 right-0 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
+          className={`discover-fab motion-pop soft-control absolute bottom-0 right-0 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
             floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
           }`}
           onClick={() => setFloatingActionsOpen(true)}

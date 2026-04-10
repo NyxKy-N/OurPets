@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sun, X } from "lucide-react";
+import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sparkles, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { useI18n } from "@/app/providers";
@@ -46,6 +46,7 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+  const [reducedEffects, setReducedEffects] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -124,6 +125,14 @@ export function Header() {
     setMobileNavOpen(false);
   }, [pathname]);
 
+  React.useEffect(() => {
+    try {
+      setReducedEffects(document.documentElement.classList.contains("reduced-effects"));
+    } catch {
+      setReducedEffects(false);
+    }
+  }, []);
+
   const primaryLinks = [
     { href: "/", label: messages.header.home, active: pathname === "/" },
     {
@@ -201,6 +210,24 @@ export function Header() {
             onClick={() => setMobileNavOpen((v) => !v)}
           >
             {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="icon"
+            className={cn("sm:hidden", reducedEffects ? "border-primary/30 bg-primary/10 text-foreground" : "")}
+            aria-label="移除动效与模糊"
+            onClick={() => {
+              const next = !document.documentElement.classList.contains("reduced-effects");
+              document.documentElement.classList.toggle("reduced-effects", next);
+              try {
+                localStorage.setItem("ui:reducedEffects", next ? "1" : "0");
+              } catch {
+              }
+              setReducedEffects(next);
+            }}
+          >
+            <Sparkles className="h-5 w-5" />
           </Button>
 
           <DropdownMenu>
