@@ -6,8 +6,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { ArrowUpRight, PawPrint, Sparkles } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
 import { useI18n } from "@/app/providers";
@@ -28,7 +28,36 @@ export function Hero({ messages }: { messages: Messages }) {
     queryKey: ["pets", { limit: 5, sort: "POPULAR" }],
     queryFn: async () => apiFetch<PetsPage>("/api/pets?limit=5&sort=POPULAR"),
   });
-  const pets = featuredPets.data?.items ?? [];
+  const slides = React.useMemo(() => {
+    const pets = featuredPets.data?.items ?? [];
+    return pets
+      .map((pet) => {
+        const img = pet.images?.[0];
+        if (!img?.url) return null;
+        return {
+          id: pet.id,
+          name: pet.name,
+          birthDate: pet.birthDate,
+          age: pet.age,
+          likesCount: pet._count.likes,
+          url: img.url,
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => Boolean(v));
+  }, [featuredPets.data]);
+  const [activeIndex, setActiveIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveIndex((curr) => (curr + 1) % slides.length);
+    }, 3500);
+    return () => window.clearInterval(timer);
+  }, [slides.length]);
+
+  React.useEffect(() => {
+    if (activeIndex >= slides.length) setActiveIndex(0);
+  }, [activeIndex, slides.length]);
 
   const handleAddPetClick = async () => {
     if (status === "loading") return;
@@ -72,99 +101,89 @@ export function Hero({ messages }: { messages: Messages }) {
           </div>
 
           <div className="relative lg:col-span-7">
-            <motion.h1
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              className="pointer-events-none absolute -top-10 left-0 z-10 max-w-[18ch] text-[2.75rem] font-semibold leading-[0.92] tracking-[-0.06em] text-foreground/92 sm:-top-12 sm:text-[3.6rem] lg:-left-8 lg:-top-16 lg:text-[4.6rem] xl:text-[5.4rem]"
-            >
-              <span className="gradient-text">{messages.home.title}</span>
-            </motion.h1>
+            <div className="mt-4 flex flex-col items-center sm:mt-5 lg:mt-7">
+              <motion.h1
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                className="mb-4 text-center text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.06em] text-foreground/92 sm:mb-5 sm:text-[3.6rem] lg:text-[4.6rem] xl:text-[5.2rem]"
+              >
+                <span className="gradient-text">OurPets</span>
+              </motion.h1>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16, scale: 0.99 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
-              className="glass-panel relative overflow-hidden rounded-[2rem] p-3 pt-20 sm:p-4 sm:pt-22 lg:p-5 lg:pt-24"
-            >
-              <div className="grid grid-cols-12 grid-rows-6 gap-3">
-                {pets.slice(0, 5).map((pet, index) => {
-                  const img = pet.images?.[0];
-                  const span =
-                    index === 0
-                      ? "col-span-7 row-span-6"
-                      : index === 1
-                        ? "col-span-5 row-span-3"
-                        : index === 2
-                          ? "col-span-5 row-span-3"
-                          : index === 3
-                            ? "col-span-4 row-span-3"
-                            : "col-span-8 row-span-3";
-
-                  return (
-                    <motion.div
-                      key={pet.id}
-                      whileHover={{ scale: 1.02 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-                      className={`relative overflow-hidden rounded-[2rem] bg-muted ${span}`}
-                    >
-                      {img ? (
+              <motion.div
+                initial={{ opacity: 0, y: 16, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+                className="glass-panel relative mt-2 w-full max-w-[920px] overflow-hidden rounded-[2rem] p-3 sm:mt-3 sm:p-4 lg:mt-4 lg:p-5"
+              >
+                <div className="relative h-[280px] overflow-hidden rounded-[2rem] bg-muted sm:h-[340px] lg:h-[390px] xl:h-[430px]">
+                  {slides.length > 0 ? (
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div
+                        key={slides[activeIndex]?.id}
+                        initial={{ opacity: 0, x: 14, scale: 1.01 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -14, scale: 0.995 }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-0"
+                      >
                         <Image
-                          src={img.url}
-                          alt={pet.name}
+                          src={slides[activeIndex].url}
+                          alt={slides[activeIndex].name}
                           fill
-                          sizes="(max-width: 1024px) 100vw, 720px"
+                          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 72vw, 860px"
                           className="object-cover"
-                          priority={index === 0}
+                          priority
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-white/40">
-                          <PawPrint className="h-8 w-8 text-primary/70" />
+                        <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-90" />
+                        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-black/22 to-transparent" />
+                        <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
+                          <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-xs font-semibold tracking-[-0.02em] text-foreground backdrop-blur-xl">
+                            {slides[activeIndex].name}
+                          </div>
+                          <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+                            {formatPetAge(locale, slides[activeIndex].birthDate, slides[activeIndex].age)}
+                          </div>
+                          <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+                            {formatCompactLabel(locale, slides[activeIndex].likesCount, messages.petCard.likes)}
+                          </div>
                         </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-90" />
-                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
-                      <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
-                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-xs font-semibold tracking-[-0.02em] text-foreground backdrop-blur-xl">
-                          {pet.name}
+                      </motion.div>
+                    </AnimatePresence>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center border border-white/70 bg-white/45 p-8 text-center backdrop-blur-xl">
+                      <div className="max-w-md">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/50 px-3 py-1 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                          <Sparkles className="h-4 w-4 text-primary" />
+                          {messages.header.discover}
                         </div>
-                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
-                          {formatPetAge(locale, pet.birthDate, pet.age)}
+                        <div className="mt-4 text-lg font-semibold tracking-tight">{messages.home.ctaTitle}</div>
+                        <div className="mt-2 text-sm leading-6 text-muted-foreground">
+                          {messages.home.ctaDescription}
                         </div>
-                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
-                          {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                          <Button
+                            size="sm"
+                            onClick={handleAddPetClick}
+                            disabled={status === "loading"}
+                            className="gap-2"
+                          >
+                            {messages.home.ctaPrimary}
+                            <ArrowUpRight className="h-4 w-4" />
+                          </Button>
+                          <Button asChild variant="outline" size="sm">
+                            <Link href="/discover" prefetch={false}>
+                              {messages.home.ctaSecondary}
+                            </Link>
+                          </Button>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-                {pets.length === 0 ? (
-                  <div className="col-span-12 row-span-6 flex items-center justify-center rounded-[2rem] border border-white/70 bg-white/45 p-8 text-center backdrop-blur-xl">
-                    <div className="max-w-md">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/50 px-3 py-1 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        {messages.header.discover}
-                      </div>
-                      <div className="mt-4 text-lg font-semibold tracking-tight">{messages.home.ctaTitle}</div>
-                      <div className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {messages.home.ctaDescription}
-                      </div>
-                      <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
-                        <Button size="sm" onClick={handleAddPetClick} disabled={status === "loading"} className="gap-2">
-                          {messages.home.ctaPrimary}
-                          <ArrowUpRight className="h-4 w-4" />
-                        </Button>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href="/discover" prefetch={false}>
-                            {messages.home.ctaSecondary}
-                          </Link>
-                        </Button>
                       </div>
                     </div>
-                  </div>
-                ) : null}
-              </div>
-            </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
           </div>
         </div>
       </section>

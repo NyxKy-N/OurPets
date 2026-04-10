@@ -129,7 +129,7 @@ export function PetFeed() {
                   }}
                   className="w-full"
                 >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1 lg:grid-cols-4">
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5 xl:grid-cols-4">
                     <TabsTrigger value="ALL" className="w-full text-[13px] sm:text-sm">
                       {messages.feed.all}
                     </TabsTrigger>
@@ -157,7 +157,7 @@ export function PetFeed() {
                   }}
                   className="w-full"
                 >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 p-1">
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
                     <TabsTrigger value="LATEST" className="w-full">
                       {messages.discover.latest}
                     </TabsTrigger>
