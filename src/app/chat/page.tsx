@@ -421,7 +421,6 @@ export default function ChatPage() {
         <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">OurPets</div>
         <div className="space-y-2">
           <div className="gradient-text text-2xl font-semibold tracking-tight sm:text-3xl">{messages.chat.title}</div>
-          <div className="max-w-3xl text-sm leading-7 text-muted-foreground">{chatShellCopy.roomHint}</div>
         </div>
       </div>
 
