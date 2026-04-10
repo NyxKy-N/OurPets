@@ -84,9 +84,11 @@ export function Hero({ messages }: { messages: Messages }) {
             <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
               {messages.home.description}
             </p>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground/88 sm:text-base">
-              {messages.home.supporting}
-            </p>
+            {messages.home.supporting?.trim() ? (
+              <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground/88 sm:text-base">
+                {messages.home.supporting}
+              </p>
+            ) : null}
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <Button asChild size="lg">

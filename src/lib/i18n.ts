@@ -262,7 +262,7 @@ const messages = {
       eyebrow: "宠物社区",
       title: "OurPets",
       description: "一个简洁现代的宠物社交动态，分享你喜爱的宠物，也发现更多可爱的伙伴。",
-      supporting: "更轻盈地展示品牌、内容与互动，让浏览路径更清晰，也让每一次发现更自然。",
+      supporting: "",
       ctaTitle: "让你的宠物被更多人看见",
       ctaDescription: "一张有故事的照片，加上一段真诚的介绍，往往就能收获点赞、评论和新朋友。",
       ctaPrimary: "立即发布宠物",

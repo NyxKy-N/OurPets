@@ -167,6 +167,24 @@ export default function ChatPage() {
     mutationFn: (id: string) => apiFetch<{ ok: true }>(`/api/chat/${id}`, { method: "DELETE" }),
     onMutate: () => {
       if (!viewerId) throw new Error("UNAUTHENTICATED");
+      if (!session?.user?.isAdmin) throw new Error("FORBIDDEN");
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["chat"] });
+    },
+    onError: (err: unknown) => {
+      if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+        toast.error(messages.chat.signInToSend);
+        return;
+      }
+      toast.error(errorMessage(err, messages.common.somethingWentWrong));
+    },
+  });
+
+  const recallMessage = useMutation({
+    mutationFn: (id: string) => apiFetch<{ ok: true }>(`/api/chat/${id}`, { method: "PATCH" }),
+    onMutate: () => {
+      if (!viewerId) throw new Error("UNAUTHENTICATED");
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["chat"] });
@@ -433,13 +451,13 @@ export default function ChatPage() {
                           <button
                             type="button"
                             className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
-                            onClick={() => deleteMessage.mutate(m.id)}
+                            onClick={() => recallMessage.mutate(m.id)}
                           >
                             {messages.chat.recall}
                           </button>
                         ) : null}
 
-                        {!canRecall && session?.user?.isAdmin && !isDeleted ? (
+                        {session?.user?.isAdmin ? (
                           <button
                             type="button"
                             className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"

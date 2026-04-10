@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, Heart, Languages, LogIn, LogOut, MessageCircle, Moon, Sun } from "lucide-react";
+import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { useI18n } from "@/app/providers";
@@ -43,6 +43,7 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const { locale, messages, setLocale } = useI18n();
   const [scrolled, setScrolled] = React.useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -67,6 +68,10 @@ export function Header() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  React.useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
 
   const primaryLinks = [
     { href: "/", label: messages.header.home, active: pathname === "/" },
@@ -116,6 +121,16 @@ export function Header() {
           </Link>
 
           <div className="flex items-center gap-1.5 sm:gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="sm:hidden"
+              aria-label="Menu"
+              onClick={() => setMobileNavOpen((v) => !v)}
+            >
+              {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="h-10 gap-2 px-3.5">
@@ -277,7 +292,9 @@ export function Header() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className={`${mobileNavOpen ? "flex" : "hidden"} flex-col gap-2.5 sm:flex sm:flex-row sm:items-center sm:justify-between`}
+        >
           <nav className="grid grid-cols-2 gap-2 text-sm text-muted-foreground sm:flex sm:flex-wrap sm:items-center sm:gap-2">
             {primaryLinks.map((item) => (
               <Link
@@ -285,6 +302,7 @@ export function Header() {
                 href={item.href}
                 prefetch={false}
                 aria-current={item.active ? "page" : undefined}
+                onClick={() => setMobileNavOpen(false)}
                 className={`inline-flex items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] sm:text-left ${
                   item.active
                     ? "glass-button border-primary/28 bg-primary/[0.16] text-foreground shadow-[0_14px_32px_hsl(var(--primary)/0.16)]"
@@ -304,6 +322,7 @@ export function Header() {
                   href={item.href}
                   prefetch={false}
                   aria-current={item.active ? "page" : undefined}
+                  onClick={() => setMobileNavOpen(false)}
                   className={`inline-flex items-center justify-center rounded-full px-4 py-2 transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] ${
                     item.active
                       ? "glass-button border-primary/24 bg-primary/[0.14] text-foreground"

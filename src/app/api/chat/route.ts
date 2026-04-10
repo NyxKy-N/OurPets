@@ -120,7 +120,7 @@ export async function POST(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
-    const user = await requireUser();
+    await requireUser();
     const session = await getSession();
     if (!session?.user?.isAdmin) {
       return NextResponse.json(
@@ -138,17 +138,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const deletedAt = new Date();
-    const result = await prisma.chatMessage.updateMany({
-      where: { deletedAt: null },
-      data: {
-        deletedAt,
-        deletedById: user.id,
-        content: null,
-        audioUrl: null,
-        audioPublicId: null,
-      },
-    });
+    const result = await prisma.chatMessage.deleteMany({});
 
     return NextResponse.json({ ok: true, data: { count: result.count } });
   } catch (err) {
