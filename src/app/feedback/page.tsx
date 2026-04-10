@@ -16,6 +16,10 @@ export default function FeedbackPage() {
   const { data: session } = useSession();
   const { messages } = useI18n();
   const [content, setContent] = React.useState("");
+  const [items, setItems] = React.useState<
+    { id: string; content: string; pageUrl?: string | null; createdAt: string; user?: { id: string; name?: string | null; email?: string | null } | null }[]
+  >([]);
+  const [loadingList, setLoadingList] = React.useState(false);
 
   const submit = useMutation({
     mutationFn: (payload: { nextContent: string; pageUrl?: string }) =>
@@ -31,6 +35,24 @@ export default function FeedbackPage() {
   });
 
   const canSubmit = Boolean(content.trim());
+
+  React.useEffect(() => {
+    let active = true;
+    async function load() {
+      if (!session?.user?.isAdmin) return;
+      setLoadingList(true);
+      try {
+        const res = await apiFetch<{ items: typeof items }>("/api/feedback");
+        if (active) setItems(res.items);
+      } finally {
+        setLoadingList(false);
+      }
+    }
+    load();
+    return () => {
+      active = false;
+    };
+  }, [session?.user?.isAdmin]);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-7 sm:py-9 lg:py-12">
@@ -68,7 +90,31 @@ export default function FeedbackPage() {
           </div>
         </div>
       </Card>
+
+      {session?.user?.isAdmin ? (
+        <Card className="glass-panel overflow-hidden rounded-[32px] p-0">
+          <div className="border-b border-border/50 bg-background/30 px-4 py-3 text-sm font-semibold text-foreground/85 sm:px-6">
+            所有反馈
+          </div>
+          <div className="divide-y divide-border/60">
+            {loadingList ? (
+              <div className="px-4 py-6 text-sm text-muted-foreground sm:px-6">加载中…</div>
+            ) : items.length === 0 ? (
+              <div className="px-4 py-6 text-sm text-muted-foreground sm:px-6">暂无反馈</div>
+            ) : (
+              items.map((f) => (
+                <div key={f.id} className="px-4 py-4 sm:px-6">
+                  <div className="text-sm text-foreground/90">{f.content}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {new Date(f.createdAt).toLocaleString()} · {(f.user?.name || f.user?.email || "匿名")}
+                    {f.pageUrl ? ` · ${f.pageUrl}` : ""}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }
-

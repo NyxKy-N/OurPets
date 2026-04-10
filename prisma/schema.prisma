@@ -37,7 +37,8 @@ model User {
   pets         Pet[]
   comments     Comment[]
   likes        Like[]
-  chatMessages ChatMessage[]
+  chatMessages ChatMessage[]      @relation("ChatMessageAuthor")
+  deletedChatMessages ChatMessage[] @relation("ChatMessageDeletedBy")
   chatReactions ChatReaction[]
   feedback     Feedback[]
 }
@@ -162,15 +163,19 @@ model ChatMessage {
   audioPublicId String?
   audioDuration Int?
   createdAt     DateTime @default(now())
+  deletedAt     DateTime?
+  deletedById   String?
 
-  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User          @relation("ChatMessageAuthor", fields: [userId], references: [id], onDelete: Cascade)
   replyTo  ChatMessage?  @relation("ChatMessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies  ChatMessage[] @relation("ChatMessageReplies")
   reactions ChatReaction[]
+  deletedBy User?        @relation("ChatMessageDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
   @@index([userId, createdAt])
   @@index([replyToId, createdAt])
+  @@index([deletedAt])
 }
 
 model ChatReaction {

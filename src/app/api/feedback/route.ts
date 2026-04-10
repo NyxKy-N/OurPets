@@ -25,3 +25,25 @@ export async function POST(req: Request) {
   }
 }
 
+export async function GET() {
+  try {
+    const session = await getSession();
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json(
+        { ok: false, error: { code: "FORBIDDEN", message: "Admins only" } },
+        { status: 403 }
+      );
+    }
+    const items = await prisma.feedback.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+      },
+      take: 200,
+    });
+    return NextResponse.json({ ok: true, data: { items } });
+  } catch (err) {
+    return handleRouteError(err);
+  }
+}
+

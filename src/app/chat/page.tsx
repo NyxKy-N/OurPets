@@ -25,6 +25,7 @@ type ChatMessage = {
   audioUrl: string | null;
   audioDuration: number | null;
   createdAt: string;
+  deletedAt: string | null;
   user: ChatUser;
   replyTo: (ChatMessage & { reactions?: ReactionSummary[] }) | null;
   reactions: ReactionSummary[];
@@ -162,6 +163,41 @@ export default function ChatPage() {
     },
   });
 
+  const deleteMessage = useMutation({
+    mutationFn: (id: string) => apiFetch<{ ok: true }>(`/api/chat/${id}`, { method: "DELETE" }),
+    onMutate: () => {
+      if (!viewerId) throw new Error("UNAUTHENTICATED");
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["chat"] });
+    },
+    onError: (err: unknown) => {
+      if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+        toast.error(messages.chat.signInToSend);
+        return;
+      }
+      toast.error(errorMessage(err, messages.common.somethingWentWrong));
+    },
+  });
+
+  const deleteAllMessages = useMutation({
+    mutationFn: () => apiFetch<{ count: number }>(`/api/chat?scope=all`, { method: "DELETE" }),
+    onMutate: () => {
+      if (!viewerId) throw new Error("UNAUTHENTICATED");
+      if (!session?.user?.isAdmin) throw new Error("FORBIDDEN");
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["chat"] });
+    },
+    onError: (err: unknown) => {
+      if (err instanceof Error && err.message === "UNAUTHENTICATED") {
+        toast.error(messages.chat.signInToSend);
+        return;
+      }
+      toast.error(errorMessage(err, messages.common.somethingWentWrong));
+    },
+  });
+
   const items = React.useMemo(() => {
     const pages = query.data?.pages ?? [];
     const itemsDesc = pages.flatMap((p) => p.items);
@@ -242,17 +278,33 @@ export default function ChatPage() {
       <Card className="glass-panel overflow-hidden rounded-[32px] p-0">
         <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-background/30 px-4 py-3 sm:px-5">
           <div className="text-sm font-semibold tracking-[-0.01em] text-foreground/85">OurPets</div>
-          {query.hasNextPage ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => query.fetchNextPage()}
-              disabled={query.isFetchingNextPage}
-              className="h-10 rounded-full px-4"
-            >
-              {messages.chat.loadMore}
-            </Button>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {session?.user?.isAdmin ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (!window.confirm(messages.chat.confirmDeleteAll)) return;
+                  deleteAllMessages.mutate();
+                }}
+                disabled={deleteAllMessages.isPending}
+                className="h-10 rounded-full px-4"
+              >
+                {messages.chat.deleteAll}
+              </Button>
+            ) : null}
+            {query.hasNextPage ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => query.fetchNextPage()}
+                disabled={query.isFetchingNextPage}
+                className="h-10 rounded-full px-4"
+              >
+                {messages.chat.loadMore}
+              </Button>
+            ) : null}
+          </div>
         </div>
 
         <div className="max-h-[62vh] overflow-y-auto px-3 py-4 sm:px-5">
@@ -264,6 +316,9 @@ export default function ChatPage() {
             <div className="space-y-3">
               {items.map((m) => {
                 const mine = viewerId === m.userId;
+                const isDeleted = Boolean(m.deletedAt);
+                const createdMs = new Date(m.createdAt).getTime();
+                const canRecall = mine && !isDeleted && Date.now() - createdMs <= 2 * 60 * 1000;
                 return (
                   <motion.div
                     key={m.id}
@@ -279,7 +334,9 @@ export default function ChatPage() {
                       </Avatar>
                     ) : null}
 
-                    <div className={`max-w-[88%] space-y-2 sm:max-w-[74%] ${mine ? "items-end text-right" : ""}`}>
+                    <div
+                      className={`flex max-w-[88%] flex-col space-y-2 sm:max-w-[74%] ${mine ? "items-end text-right" : ""}`}
+                    >
                       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                         <span className="text-sm font-semibold text-foreground/85">
                           {displayName(m.user, messages.common.user)}
@@ -296,68 +353,103 @@ export default function ChatPage() {
                             className="mb-2 w-full rounded-[18px] border border-white/70 bg-white/40 px-3 py-2 text-left text-xs leading-5 text-muted-foreground backdrop-blur-xl"
                             onClick={() => setQuoted(m.replyTo)}
                           >
-                            <span className="font-semibold text-foreground/70">
-                              {displayName(m.replyTo.user, messages.common.user)}
-                            </span>
-                            {m.replyTo.content ? ` · ${m.replyTo.content.slice(0, 120)}` : ""}
-                            {!m.replyTo.content && m.replyTo.audioUrl ? " · [voice]" : ""}
+                            {m.replyTo.deletedAt ? (
+                              <span className="italic text-muted-foreground">{messages.chat.deletedPlaceholder}</span>
+                            ) : (
+                              <>
+                                <span className="font-semibold text-foreground/70">
+                                  {displayName(m.replyTo.user, messages.common.user)}
+                                </span>
+                                {m.replyTo.content ? ` · ${m.replyTo.content.slice(0, 120)}` : ""}
+                                {!m.replyTo.content && m.replyTo.audioUrl ? " · [voice]" : ""}
+                              </>
+                            )}
                           </button>
                         ) : null}
 
-                        {m.content ? (
-                          <div className="whitespace-pre-wrap break-words text-sm text-foreground/90">{m.content}</div>
-                        ) : null}
-
-                        {m.audioUrl ? (
-                          <div className="mt-2">
-                            <audio controls preload="none" src={m.audioUrl} className="w-full" />
-                          </div>
-                        ) : null}
+                        {isDeleted ? (
+                          <div className="text-sm italic text-muted-foreground">{messages.chat.deletedPlaceholder}</div>
+                        ) : (
+                          <>
+                            {m.content ? (
+                              <div className="whitespace-pre-wrap break-words text-sm text-foreground/90">{m.content}</div>
+                            ) : null}
+                            {m.audioUrl ? (
+                              <div className="mt-2">
+                                <audio controls preload="none" src={m.audioUrl} className="w-full" />
+                              </div>
+                            ) : null}
+                          </>
+                        )}
                       </div>
 
                       <div className={`flex flex-wrap items-center gap-1.5 ${mine ? "justify-end" : ""}`}>
                         <div className="flex flex-wrap items-center gap-1">
-                          {m.reactions.slice(0, 5).map((r) => (
-                            <button
-                              key={`${m.id}-${r.emoji}`}
-                              type="button"
-                              className={`soft-control inline-flex h-9 items-center gap-1 rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] ${
-                                r.reactedByMe ? "ring-2 ring-primary/25" : ""
-                              }`}
-                              onClick={() => toggleReaction.mutate({ messageId: m.id, emoji: r.emoji })}
-                              disabled={toggleReaction.isPending}
-                            >
-                              <span>{r.emoji}</span>
-                              <span className="text-muted-foreground">{r.count}</span>
-                            </button>
-                          ))}
+                          {!isDeleted &&
+                            m.reactions.slice(0, 5).map((r) => (
+                              <button
+                                key={`${m.id}-${r.emoji}`}
+                                type="button"
+                                className={`soft-control inline-flex h-9 items-center gap-1 rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] ${
+                                  r.reactedByMe ? "ring-2 ring-primary/25" : ""
+                                }`}
+                                onClick={() => toggleReaction.mutate({ messageId: m.id, emoji: r.emoji })}
+                                disabled={toggleReaction.isPending}
+                              >
+                                <span>{r.emoji}</span>
+                                <span className="text-muted-foreground">{r.count}</span>
+                              </button>
+                            ))}
                         </div>
 
-                        <div className="flex items-center gap-1">
-                          {quickEmojis.map((emoji) => (
-                            <button
-                              key={`${m.id}-${emoji}`}
-                              type="button"
-                              className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/40 text-sm text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
-                              onClick={() => toggleReaction.mutate({ messageId: m.id, emoji })}
-                              disabled={toggleReaction.isPending}
-                              aria-label={emoji}
-                            >
-                              {emoji}
-                            </button>
-                          ))}
-                        </div>
+                        {!isDeleted && (
+                          <div className="flex items-center gap-1">
+                            {quickEmojis.map((emoji) => (
+                              <button
+                                key={`${m.id}-${emoji}`}
+                                type="button"
+                                className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/40 text-sm text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                                onClick={() => toggleReaction.mutate({ messageId: m.id, emoji })}
+                                disabled={toggleReaction.isPending}
+                                aria-label={emoji}
+                              >
+                                {emoji}
+                              </button>
+                            ))}
+                          </div>
+                        )}
 
-                        <button
-                          type="button"
-                          className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
-                          onClick={() => setQuoted(m)}
-                        >
-                          {messages.chat.quote}
-                        </button>
+                        {!isDeleted && (
+                          <button
+                            type="button"
+                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            onClick={() => setQuoted(m)}
+                          >
+                            {messages.chat.quote}
+                          </button>
+                        )}
+
+                        {canRecall ? (
+                          <button
+                            type="button"
+                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            onClick={() => deleteMessage.mutate(m.id)}
+                          >
+                            {messages.chat.recall}
+                          </button>
+                        ) : null}
+
+                        {!canRecall && session?.user?.isAdmin && !isDeleted ? (
+                          <button
+                            type="button"
+                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            onClick={() => deleteMessage.mutate(m.id)}
+                          >
+                            {messages.chat.delete}
+                          </button>
+                        ) : null}
                       </div>
                     </div>
-
                     {mine ? (
                       <Avatar className="h-9 w-9">
                         <AvatarImage src={m.user.image ?? undefined} />
@@ -376,9 +468,17 @@ export default function ChatPage() {
           {quoted ? (
             <div className="mb-2 flex items-center justify-between gap-2 rounded-[20px] border border-white/70 bg-white/40 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl">
               <div className="min-w-0 truncate">
-                <span className="font-semibold text-foreground/75">{displayName(quoted.user, messages.common.user)}</span>
-                {quoted.content ? ` · ${quoted.content.slice(0, 120)}` : ""}
-                {!quoted.content && quoted.audioUrl ? " · [voice]" : ""}
+                {quoted.deletedAt ? (
+                  <span className="italic">{messages.chat.deletedPlaceholder}</span>
+                ) : (
+                  <>
+                    <span className="font-semibold text-foreground/75">
+                      {displayName(quoted.user, messages.common.user)}
+                    </span>
+                    {quoted.content ? ` · ${quoted.content.slice(0, 120)}` : ""}
+                    {!quoted.content && quoted.audioUrl ? " · [voice]" : ""}
+                  </>
+                )}
               </div>
               <button
                 type="button"

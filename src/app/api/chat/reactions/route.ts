@@ -13,12 +13,18 @@ export async function POST(req: Request) {
 
     const message = await prisma.chatMessage.findUnique({
       where: { id: input.messageId },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
     if (!message) {
       return NextResponse.json(
         { ok: false, error: { code: "NOT_FOUND", message: "Message not found" } },
         { status: 404 }
+      );
+    }
+    if (message.deletedAt) {
+      return NextResponse.json(
+        { ok: false, error: { code: "FORBIDDEN", message: "Message deleted" } },
+        { status: 403 }
       );
     }
 
@@ -47,4 +53,3 @@ export async function POST(req: Request) {
     return handleRouteError(err);
   }
 }
-

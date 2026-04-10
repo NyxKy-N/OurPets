@@ -118,3 +118,40 @@ export async function POST(req: Request) {
   }
 }
 
+export async function DELETE(req: Request) {
+  try {
+    const user = await requireUser();
+    const session = await getSession();
+    if (!session?.user?.isAdmin) {
+      return NextResponse.json(
+        { ok: false, error: { code: "FORBIDDEN", message: "Admins only" } },
+        { status: 403 }
+      );
+    }
+
+    const url = new URL(req.url);
+    const scope = url.searchParams.get("scope");
+    if (scope && scope !== "all") {
+      return NextResponse.json(
+        { ok: false, error: { code: "BAD_REQUEST", message: "Invalid scope" } },
+        { status: 400 }
+      );
+    }
+
+    const deletedAt = new Date();
+    const result = await prisma.chatMessage.updateMany({
+      where: { deletedAt: null },
+      data: {
+        deletedAt,
+        deletedById: user.id,
+        content: null,
+        audioUrl: null,
+        audioPublicId: null,
+      },
+    });
+
+    return NextResponse.json({ ok: true, data: { count: result.count } });
+  } catch (err) {
+    return handleRouteError(err);
+  }
+}
