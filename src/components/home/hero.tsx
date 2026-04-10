@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUp, ArrowUpRight, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
 import { useI18n } from "@/app/providers";
@@ -81,7 +81,7 @@ export function Hero({ messages }: { messages: Messages }) {
             <div className="inline-flex rounded-full border border-white/70 bg-white/40 px-4 py-1.5 text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase backdrop-blur-xl">
               {messages.home.eyebrow}
             </div>
-            <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
+            <p className="mt-6 hidden max-w-xl text-base leading-8 text-muted-foreground sm:block sm:text-lg">
               {messages.home.description}
             </p>
             {messages.home.supporting?.trim() ? (
@@ -90,7 +90,7 @@ export function Hero({ messages }: { messages: Messages }) {
               </p>
             ) : null}
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-9 hidden flex-col gap-3 sm:flex sm:flex-row">
               <Button asChild size="lg">
                 <Link href="/discover" prefetch={false}>
                   {messages.header.discover}
@@ -185,9 +185,32 @@ export function Hero({ messages }: { messages: Messages }) {
                   )}
                 </div>
               </motion.div>
+
+              <div className="mt-5 w-full max-w-[920px] sm:hidden">
+                <p className="text-base leading-8 text-muted-foreground">{messages.home.description}</p>
+                <div className="mt-4 flex flex-col gap-3">
+                  <Button asChild size="lg">
+                    <Link href="/discover" prefetch={false}>
+                      {messages.header.discover}
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={handleAddPetClick} disabled={status === "loading"}>
+                    {messages.header.addPet}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          aria-label="返回顶部"
+        >
+          <ArrowUp className="h-5 w-5" />
+        </button>
       </section>
     </Reveal>
   );
