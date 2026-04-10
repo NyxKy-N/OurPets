@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Heart, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Heart, Pencil, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useI18n } from "@/app/providers";
@@ -119,6 +119,16 @@ export function PetDetail({
       <Reveal>
         <Card className="overflow-hidden rounded-[34px] p-1">
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] bg-muted sm:h-[30rem] sm:aspect-auto">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="absolute left-4 top-4 z-10 h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:left-6 sm:top-6"
+              onClick={() => router.back()}
+              aria-label="返回"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
             {hero ? (
               <>
                 <Image

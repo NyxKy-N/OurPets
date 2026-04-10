@@ -189,7 +189,11 @@ export function PetFeed() {
               </div>
             </div>
 
-            <div className={`${mobileFiltersOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2`}>
+            <div
+              className={`grid gap-3 overflow-hidden transition-[max-height,opacity,transform] duration-500 [transition-timing-function:var(--ease-soft)] sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 ${
+                mobileFiltersOpen ? "max-h-[520px] opacity-100 translate-y-0" : "pointer-events-none max-h-0 opacity-0 -translate-y-2"
+              }`}
+            >
               <div className="glass-panel rounded-[28px] p-3">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.categoryLabel}
@@ -307,8 +311,12 @@ export function PetFeed() {
         </div>
       ) : null}
 
-      {floatingActionsOpen ? (
-        <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:hidden">
+      <div className="fixed bottom-6 right-6 z-40 sm:hidden">
+        <div
+          className={`flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-[transform,opacity] duration-500 [transition-timing-function:var(--ease-soft)] ${
+            floatingActionsOpen ? "scale-100 opacity-100" : "pointer-events-none scale-[0.92] opacity-0"
+          }`}
+        >
           <button
             type="button"
             className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
@@ -329,21 +337,23 @@ export function PetFeed() {
             type="button"
             className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
             onClick={() => setFloatingActionsOpen(false)}
-            aria-label={messages.common.cancel}
+            aria-label={messages.discover.hideFilters}
           >
             <X className="h-5 w-5" />
           </button>
         </div>
-      ) : (
+
         <button
           type="button"
-          className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+          className={`soft-control absolute bottom-0 right-0 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transition-[transform,opacity] duration-500 [transition-timing-function:var(--ease-soft)] hover:bg-white/55 active:scale-[0.98] ${
+            floatingActionsOpen ? "pointer-events-none scale-[0.92] opacity-0" : "scale-100 opacity-100"
+          }`}
           onClick={() => setFloatingActionsOpen(true)}
-          aria-label="展开"
+          aria-label={messages.discover.showFilters}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-      )}
+      </div>
     </section>
   );
 }
