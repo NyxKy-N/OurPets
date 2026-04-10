@@ -329,13 +329,13 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`glass-panel-strong discover-dropdown-surface motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[28px] p-3.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
+              className={`glass-panel-strong discover-dropdown-surface motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[24px] p-1.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
               }`}
             >
-              <div className="glass-panel rounded-[28px] p-3">
+              <div className="rounded-[20px] px-3 py-2.5">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.categoryLabel}
                 </div>
@@ -363,7 +363,7 @@ export function PetFeed() {
                 </Tabs>
               </div>
 
-              <div className="glass-panel rounded-[28px] p-3">
+              <div className="rounded-[20px] px-3 py-2.5">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.sortLabel}
                 </div>

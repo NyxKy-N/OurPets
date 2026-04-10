@@ -49,9 +49,6 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-  const [languageMenuOpen, setLanguageMenuOpen] = React.useState(false);
-  const [notificationsMenuOpen, setNotificationsMenuOpen] = React.useState(false);
-  const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -138,9 +135,6 @@ export function Header() {
     const onOverlayOpen = (event: Event) => {
       const source = (event as CustomEvent<{ source?: string }>).detail?.source;
       if (source !== "header-mobile-nav") setMobileNavOpen(false);
-      if (source !== "header-language-menu") setLanguageMenuOpen(false);
-      if (source !== "header-notifications-menu") setNotificationsMenuOpen(false);
-      if (source !== "header-account-menu") setAccountMenuOpen(false);
     };
     window.addEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
     return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
@@ -240,13 +234,7 @@ export function Header() {
 
           {!session ? (
             <>
-              <DropdownMenu
-                open={languageMenuOpen}
-                onOpenChange={(open) => {
-                  setLanguageMenuOpen(open);
-                  if (open) announceOverlayOpen("header-language-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 gap-2 px-3.5">
                     <Languages className="h-4 w-4" />
@@ -279,13 +267,7 @@ export function Header() {
             </>
           ) : (
             <>
-              <DropdownMenu
-                open={languageMenuOpen}
-                onOpenChange={(open) => {
-                  setLanguageMenuOpen(open);
-                  if (open) announceOverlayOpen("header-language-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="hidden h-10 gap-2 px-3.5 sm:inline-flex">
                     <Languages className="h-4 w-4" />
@@ -323,13 +305,7 @@ export function Header() {
             <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
           ) : session ? (
             <>
-              <DropdownMenu
-                open={notificationsMenuOpen}
-                onOpenChange={(open) => {
-                  setNotificationsMenuOpen(open);
-                  if (open) announceOverlayOpen("header-notifications-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-notifications-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -407,13 +383,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu
-                open={accountMenuOpen}
-                onOpenChange={(open) => {
-                  setAccountMenuOpen(open);
-                  if (open) announceOverlayOpen("header-account-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-account-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 px-2.5">
                     <Avatar className="h-8 w-8">
