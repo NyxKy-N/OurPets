@@ -230,7 +230,7 @@ export function PetFeed() {
 
   return (
     <section id="pet-feed" className="scroll-mt-28">
-      <div className="glass-panel discover-shell rounded-[34px] p-5 sm:p-6 lg:p-7">
+      <div className="glass-panel discover-shell relative z-[90] rounded-[34px] p-5 sm:p-6 lg:p-7">
         <div className="flex flex-col gap-6 lg:gap-7">
           <div className="space-y-2">
             <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
@@ -241,7 +241,7 @@ export function PetFeed() {
             </h2>
           </div>
 
-          <div className="relative grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
+          <div className="relative z-[95] grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
             <div className="glass-panel rounded-[28px] p-3.5">
               <div className="flex flex-col gap-3">
                 <div className="relative">
@@ -307,7 +307,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`floating-frosted-panel motion-collapse absolute left-0 right-0 top-full z-[70] mt-4 grid gap-3 overflow-hidden rounded-[28px] p-3.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
+              className={`motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[28px] border border-border/70 bg-background/55 p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
