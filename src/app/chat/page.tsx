@@ -3,13 +3,14 @@
 import * as React from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Mic, Send, SmilePlus, X } from "lucide-react";
+import { CheckCheck, LoaderCircle, Mic, Quote, Send, SmilePlus, Trash2, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { motion } from "framer-motion";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { formatDateTime } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +48,16 @@ function getInitials(name: string) {
   const n = name.trim();
   if (!n) return "U";
   return n.slice(0, 1).toUpperCase();
+}
+
+function formatSeconds(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = Math.floor(totalSeconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${minutes}:${seconds}`;
 }
 
 async function uploadVoice(blob: Blob) {
@@ -88,10 +99,14 @@ export default function ChatPage() {
   const [quoted, setQuoted] = React.useState<ChatMessage | null>(null);
   const [isRecording, setIsRecording] = React.useState(false);
   const [isUploadingVoice, setIsUploadingVoice] = React.useState(false);
+  const [recordingSeconds, setRecordingSeconds] = React.useState(0);
   const recorderRef = React.useRef<MediaRecorder | null>(null);
   const chunksRef = React.useRef<BlobPart[]>([]);
   const bottomRef = React.useRef<HTMLDivElement | null>(null);
+  const scrollViewportRef = React.useRef<HTMLDivElement | null>(null);
   const didInitialScrollRef = React.useRef(false);
+  const shouldStickToBottomRef = React.useRef(true);
+  const recordingStartedAtRef = React.useRef<number | null>(null);
 
   const query = useInfiniteQuery({
     queryKey: ["chat"],
@@ -131,6 +146,7 @@ export default function ChatPage() {
       setContent("");
       setQuoted(null);
       await qc.invalidateQueries({ queryKey: ["chat"] });
+      shouldStickToBottomRef.current = true;
       window.setTimeout(() => bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" }), 60);
     },
     onError: (err: unknown) => {
@@ -222,6 +238,62 @@ export default function ChatPage() {
     return [...itemsDesc].reverse();
   }, [query.data]);
 
+  const chatShellCopy = React.useMemo(() => {
+    if (locale === "zh") {
+      return {
+        roomStatus: "共享群聊 · 在线同步",
+        roomHint: "支持文字、引用、表情与语音，像 WhatsApp 一样自然。",
+        recording: "正在录音",
+        cancelRecording: "取消录音",
+        sendVoice: "发送语音",
+        voiceReady: "松开前可继续录音，发送后会自动上传。",
+        keyboardHint: "Enter 发送 · Shift + Enter 换行",
+        voiceLabel: "语音消息",
+      };
+    }
+    if (locale === "it") {
+      return {
+        roomStatus: "Chat condivisa · sincronia live",
+        roomHint: "Testo, citazioni, reazioni e voce in un flusso naturale.",
+        recording: "Registrazione in corso",
+        cancelRecording: "Annulla registrazione",
+        sendVoice: "Invia voce",
+        voiceReady: "Puoi continuare a registrare finché non invii.",
+        keyboardHint: "Invio per mandare · Shift + Invio per andare a capo",
+        voiceLabel: "Messaggio vocale",
+      };
+    }
+    if (locale === "es") {
+      return {
+        roomStatus: "Chat compartido · sincronización en vivo",
+        roomHint: "Texto, citas, reacciones y voz en un flujo tipo WhatsApp.",
+        recording: "Grabando",
+        cancelRecording: "Cancelar grabación",
+        sendVoice: "Enviar voz",
+        voiceReady: "Puedes seguir grabando hasta enviarlo.",
+        keyboardHint: "Enter para enviar · Shift + Enter para nueva línea",
+        voiceLabel: "Mensaje de voz",
+      };
+    }
+    return {
+      roomStatus: "Shared room · live sync",
+      roomHint: "Text, quote, react, and voice with a WhatsApp-like flow.",
+      recording: "Recording",
+      cancelRecording: "Cancel recording",
+      sendVoice: "Send voice",
+      voiceReady: "Keep recording until you send it.",
+      keyboardHint: "Enter to send · Shift + Enter for a new line",
+      voiceLabel: "Voice message",
+    };
+  }, [locale]);
+
+  const handleViewportScroll = React.useCallback(() => {
+    const viewport = scrollViewportRef.current;
+    if (!viewport) return;
+    const distanceFromBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    shouldStickToBottomRef.current = distanceFromBottom < 96;
+  }, []);
+
   React.useEffect(() => {
     if (!query.data) return;
     if (didInitialScrollRef.current) return;
@@ -229,24 +301,64 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [query.data]);
 
+  React.useEffect(() => {
+    if (!didInitialScrollRef.current) return;
+    if (!shouldStickToBottomRef.current) return;
+    bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [items.length]);
+
+  React.useEffect(() => {
+    if (!isRecording) {
+      setRecordingSeconds(0);
+      recordingStartedAtRef.current = null;
+      return;
+    }
+    const startedAt = Date.now();
+    recordingStartedAtRef.current = startedAt;
+    setRecordingSeconds(0);
+    const timer = window.setInterval(() => {
+      setRecordingSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, [isRecording]);
+
+  React.useEffect(() => {
+    return () => {
+      recorderRef.current?.stream.getTracks().forEach((track) => track.stop());
+    };
+  }, []);
+
+  const handleSendText = React.useCallback(() => {
+    const nextContent = content.trim();
+    if (!nextContent || sendMessage.isPending || isUploadingVoice) return;
+    sendMessage.mutate({
+      nextContent,
+      replyToId: quoted?.id ?? undefined,
+    });
+  }, [content, isUploadingVoice, quoted?.id, sendMessage]);
+
   async function startRecording() {
     if (isRecording || isUploadingVoice) return;
     if (!viewerId) {
       toast.error(messages.chat.signInToSend);
       return;
     }
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    chunksRef.current = [];
-    recorder.addEventListener("dataavailable", (e) => {
-      if (e.data.size > 0) chunksRef.current.push(e.data);
-    });
-    recorder.addEventListener("stop", () => {
-      stream.getTracks().forEach((t) => t.stop());
-    });
-    recorder.start();
-    recorderRef.current = recorder;
-    setIsRecording(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      recorder.addEventListener("dataavailable", (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      });
+      recorder.addEventListener("stop", () => {
+        stream.getTracks().forEach((t) => t.stop());
+      });
+      recorder.start(250);
+      recorderRef.current = recorder;
+      setIsRecording(true);
+    } catch (err) {
+      toast.error(errorMessage(err, messages.chat.failedToUploadVoice));
+    }
   }
 
   async function stopRecordingAndSend() {
@@ -269,6 +381,9 @@ export default function ChatPage() {
     try {
       setIsUploadingVoice(true);
       const blob = await stopped;
+      if (blob.size === 0) {
+        throw new Error(messages.chat.failedToUploadVoice);
+      }
       const uploaded = await uploadVoice(blob);
       await sendMessage.mutateAsync({
         replyToId: quoted?.id ?? undefined,
@@ -285,18 +400,40 @@ export default function ChatPage() {
     }
   }
 
+  function cancelRecording() {
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    }
+    recorderRef.current = null;
+    chunksRef.current = [];
+    setIsRecording(false);
+    setRecordingSeconds(0);
+  }
+
   const quickEmojis = ["❤️", "😂", "👍", "🐾", "🥹", "🔥"];
+  const composerBusy = sendMessage.isPending || isUploadingVoice;
+  const canSendText = Boolean(content.trim()) && !composerBusy;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-7 sm:py-9 lg:py-12">
-      <div className="space-y-2">
-        <div className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{messages.chat.title}</div>
+      <div className="space-y-3">
+        <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">OurPets</div>
+        <div className="space-y-2">
+          <div className="gradient-text text-2xl font-semibold tracking-tight sm:text-3xl">{messages.chat.title}</div>
+          <div className="max-w-3xl text-sm leading-7 text-muted-foreground">{chatShellCopy.roomHint}</div>
+        </div>
       </div>
 
-      <Card className="glass-panel overflow-hidden rounded-[32px] p-0">
-        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-background/30 px-4 py-3 sm:px-5">
-          <div className="text-sm font-semibold tracking-[-0.01em] text-foreground/85">OurPets</div>
-          <div className="flex items-center gap-2">
+      <Card className="glass-panel overflow-hidden rounded-[34px] p-0">
+        <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-background/30 px-4 py-4 backdrop-blur-xl sm:px-5">
+          <div className="space-y-1">
+            <div className="text-sm font-semibold tracking-[-0.01em] text-foreground/88">OurPets</div>
+            <div className="inline-flex rounded-full border border-border/60 bg-background/55 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+              {chatShellCopy.roomStatus}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {session?.user?.isAdmin ? (
               <Button
                 variant="outline"
@@ -325,13 +462,20 @@ export default function ChatPage() {
           </div>
         </div>
 
-        <div className="max-h-[62vh] overflow-y-auto px-3 py-4 sm:px-5">
+        <div
+          ref={scrollViewportRef}
+          onScroll={handleViewportScroll}
+          className="relative max-h-[62vh] overflow-y-auto px-3 py-4 sm:px-5"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.08),transparent_38%),linear-gradient(180deg,hsl(var(--background)/0.14),transparent_22%,transparent_78%,hsl(var(--background)/0.16))]" />
           {query.isLoading ? (
-            <div className="text-sm text-muted-foreground">{messages.common.loading}</div>
+            <div className="relative z-10 text-sm text-muted-foreground">{messages.common.loading}</div>
           ) : items.length === 0 ? (
-            <div className="text-sm text-muted-foreground">{messages.feed.empty}</div>
+            <div className="relative z-10 rounded-[24px] border border-border/60 bg-background/45 px-4 py-8 text-center text-sm text-muted-foreground backdrop-blur-xl">
+              {messages.feed.empty}
+            </div>
           ) : (
-            <div className="space-y-3">
+            <div className="relative z-10 space-y-4">
               {items.map((m) => {
                 const mine = viewerId === m.userId;
                 const isDeleted = Boolean(m.deletedAt);
@@ -342,20 +486,20 @@ export default function ChatPage() {
                     key={m.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className={`flex gap-3 ${mine ? "justify-end" : "justify-start"}`}
+                    transition={{ type: "spring", mass: 0.7, damping: 22, stiffness: 260 }}
+                    className={cn("group/message flex gap-3", mine ? "justify-end" : "justify-start")}
                   >
                     {!mine ? (
-                      <Avatar className="h-9 w-9">
+                      <Avatar className="mt-1 h-9 w-9 shadow-[0_12px_30px_hsl(var(--foreground)/0.08)]">
                         <AvatarImage src={m.user.image ?? undefined} />
                         <AvatarFallback>{getInitials(displayName(m.user, messages.common.user))}</AvatarFallback>
                       </Avatar>
                     ) : null}
 
                     <div
-                      className={`flex max-w-[88%] flex-col space-y-2 sm:max-w-[74%] ${mine ? "items-end text-right" : ""}`}
+                      className={cn("flex max-w-[90%] flex-col gap-2 sm:max-w-[76%]", mine ? "items-end text-right" : "")}
                     >
-                      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                      <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-1 px-1", mine ? "justify-end" : "")}>
                         <span className="text-sm font-semibold text-foreground/85">
                           {displayName(m.user, messages.common.user)}
                         </span>
@@ -364,11 +508,21 @@ export default function ChatPage() {
                         </span>
                       </div>
 
-                      <div className={`rounded-[24px] border border-white/70 bg-white/45 px-4 py-3 backdrop-blur-xl ${mine ? "ml-auto" : ""}`}>
+                      <div
+                        className={cn(
+                          "overflow-hidden rounded-[26px] border px-4 py-3 backdrop-blur-xl",
+                          mine
+                            ? "ml-auto border-primary/24 bg-primary/[0.12] text-foreground shadow-[0_20px_40px_hsl(var(--primary)/0.12)]"
+                            : "border-border/60 bg-background/55 text-foreground shadow-[0_18px_38px_hsl(var(--foreground)/0.08)]"
+                        )}
+                      >
                         {m.replyTo ? (
                           <button
                             type="button"
-                            className="mb-2 w-full rounded-[18px] border border-white/70 bg-white/40 px-3 py-2 text-left text-xs leading-5 text-muted-foreground backdrop-blur-xl"
+                            className={cn(
+                              "mb-3 w-full rounded-[18px] border px-3 py-2 text-left text-xs leading-5 backdrop-blur-xl transition-[background-color,border-color] duration-300 hover:bg-background/78",
+                              mine ? "border-primary/18 bg-background/58 text-muted-foreground" : "border-border/60 bg-background/62 text-muted-foreground"
+                            )}
                             onClick={() => setQuoted(m.replyTo)}
                           >
                             {m.replyTo.deletedAt ? (
@@ -379,7 +533,7 @@ export default function ChatPage() {
                                   {displayName(m.replyTo.user, messages.common.user)}
                                 </span>
                                 {m.replyTo.content ? ` · ${m.replyTo.content.slice(0, 120)}` : ""}
-                                {!m.replyTo.content && m.replyTo.audioUrl ? " · [voice]" : ""}
+                                {!m.replyTo.content && m.replyTo.audioUrl ? ` · ${chatShellCopy.voiceLabel}` : ""}
                               </>
                             )}
                           </button>
@@ -390,25 +544,42 @@ export default function ChatPage() {
                         ) : (
                           <>
                             {m.content ? (
-                              <div className="whitespace-pre-wrap break-words text-sm text-foreground/90">{m.content}</div>
+                              <div className="whitespace-pre-wrap break-words text-sm leading-6 text-foreground/92">{m.content}</div>
                             ) : null}
                             {m.audioUrl ? (
-                              <div className="mt-2">
+                              <div className={cn("mt-2 rounded-[20px] border px-3 py-3", mine ? "border-primary/18 bg-background/55" : "border-border/60 bg-background/60")}>
+                                <div className="mb-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center gap-2">
+                                    <Mic className="h-3.5 w-3.5 text-primary/80" />
+                                    {chatShellCopy.voiceLabel}
+                                  </span>
+                                  <span>{m.audioDuration ? formatSeconds(m.audioDuration) : "00:00"}</span>
+                                </div>
                                 <audio controls preload="none" src={m.audioUrl} className="w-full" />
                               </div>
                             ) : null}
                           </>
                         )}
+                        {mine ? (
+                          <div className="mt-2 flex items-center justify-end gap-1 text-[11px] text-muted-foreground">
+                            <CheckCheck className="h-3.5 w-3.5 text-primary/85" />
+                          </div>
+                        ) : null}
                       </div>
 
-                      <div className={`flex flex-wrap items-center gap-1.5 ${mine ? "justify-end" : ""}`}>
+                      <div
+                        className={cn(
+                          "flex flex-wrap items-center gap-1.5 px-1 transition-opacity duration-300 sm:opacity-0 sm:group-hover/message:opacity-100 sm:group-focus-within/message:opacity-100",
+                          mine ? "justify-end" : ""
+                        )}
+                      >
                         <div className="flex flex-wrap items-center gap-1">
                           {!isDeleted &&
                             m.reactions.slice(0, 5).map((r) => (
                               <button
                                 key={`${m.id}-${r.emoji}`}
                                 type="button"
-                                className={`soft-control inline-flex h-9 items-center gap-1 rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] ${
+                                className={`soft-control inline-flex h-9 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98] ${
                                   r.reactedByMe ? "ring-2 ring-primary/25" : ""
                                 }`}
                                 onClick={() => toggleReaction.mutate({ messageId: m.id, emoji: r.emoji })}
@@ -426,7 +597,7 @@ export default function ChatPage() {
                               <button
                                 key={`${m.id}-${emoji}`}
                                 type="button"
-                                className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/40 text-sm text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                                className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/55 text-sm text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                                 onClick={() => toggleReaction.mutate({ messageId: m.id, emoji })}
                                 disabled={toggleReaction.isPending}
                                 aria-label={emoji}
@@ -440,9 +611,10 @@ export default function ChatPage() {
                         {!isDeleted && (
                           <button
                             type="button"
-                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            className="soft-control inline-flex h-9 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                             onClick={() => setQuoted(m)}
                           >
+                            <Quote className="h-3.5 w-3.5" />
                             {messages.chat.quote}
                           </button>
                         )}
@@ -450,7 +622,7 @@ export default function ChatPage() {
                         {canRecall ? (
                           <button
                             type="button"
-                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            className="soft-control inline-flex h-9 items-center rounded-full border border-border/60 bg-background/55 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                             onClick={() => recallMessage.mutate(m.id)}
                           >
                             {messages.chat.recall}
@@ -460,16 +632,17 @@ export default function ChatPage() {
                         {session?.user?.isAdmin ? (
                           <button
                             type="button"
-                            className="soft-control inline-flex h-9 items-center rounded-full border border-white/70 bg-white/40 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                            className="soft-control inline-flex h-9 items-center gap-1 rounded-full border border-border/60 bg-background/55 px-3 text-xs font-medium text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                             onClick={() => deleteMessage.mutate(m.id)}
                           >
+                            <Trash2 className="h-3.5 w-3.5" />
                             {messages.chat.delete}
                           </button>
                         ) : null}
                       </div>
                     </div>
                     {mine ? (
-                      <Avatar className="h-9 w-9">
+                      <Avatar className="mt-1 h-9 w-9 shadow-[0_12px_30px_hsl(var(--foreground)/0.08)]">
                         <AvatarImage src={m.user.image ?? undefined} />
                         <AvatarFallback>{getInitials(displayName(m.user, messages.common.user))}</AvatarFallback>
                       </Avatar>
@@ -482,9 +655,9 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="border-t border-border/50 bg-background/30 px-3 py-3 sm:px-5">
+        <div className="border-t border-border/50 bg-background/30 px-3 py-3 backdrop-blur-xl sm:px-5">
           {quoted ? (
-            <div className="mb-2 flex items-center justify-between gap-2 rounded-[20px] border border-white/70 bg-white/40 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl">
+            <div className="mb-3 flex items-center justify-between gap-2 rounded-[20px] border border-border/60 bg-background/55 px-3 py-2 text-xs text-muted-foreground backdrop-blur-xl">
               <div className="min-w-0 truncate">
                 {quoted.deletedAt ? (
                   <span className="italic">{messages.chat.deletedPlaceholder}</span>
@@ -494,14 +667,14 @@ export default function ChatPage() {
                       {displayName(quoted.user, messages.common.user)}
                     </span>
                     {quoted.content ? ` · ${quoted.content.slice(0, 120)}` : ""}
-                    {!quoted.content && quoted.audioUrl ? " · [voice]" : ""}
+                    {!quoted.content && quoted.audioUrl ? ` · ${chatShellCopy.voiceLabel}` : ""}
                   </>
                 )}
               </div>
               <button
                 type="button"
                 onClick={() => setQuoted(null)}
-                className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/35 text-foreground/70 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                className="soft-control inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/60 bg-background/50 text-foreground/70 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                 aria-label={messages.chat.cancelQuote}
               >
                 <X className="h-4 w-4" />
@@ -509,58 +682,102 @@ export default function ChatPage() {
             </div>
           ) : null}
 
-          <div className="flex items-end gap-2">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={messages.chat.messagePlaceholder}
-              className="min-h-[44px] flex-1"
-              disabled={sendMessage.isPending || isUploadingVoice}
-            />
+          <div className="glass-panel rounded-[28px] p-2.5 sm:p-3">
+            {isRecording ? (
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 flex-1 items-center gap-3 rounded-[22px] border border-primary/24 bg-primary/[0.08] px-4 py-3 backdrop-blur-xl">
+                  <span className="relative flex h-3 w-3 shrink-0">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
+                    <span className="relative inline-flex h-3 w-3 rounded-full bg-primary" />
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-foreground">{chatShellCopy.recording}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatSeconds(recordingSeconds)} · {chatShellCopy.voiceReady}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={cancelRecording}
+                    className="h-11 rounded-full px-4"
+                    aria-label={chatShellCopy.cancelRecording}
+                  >
+                    <X className="h-4 w-4" />
+                    {messages.chat.cancelQuote}
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => void stopRecordingAndSend()}
+                    className="h-11 rounded-full px-4"
+                    disabled={composerBusy}
+                    aria-label={chatShellCopy.sendVoice}
+                  >
+                    {isUploadingVoice ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {chatShellCopy.sendVoice}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-end gap-2">
+                <Textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter" || e.shiftKey) return;
+                    e.preventDefault();
+                    handleSendText();
+                  }}
+                  placeholder={messages.chat.messagePlaceholder}
+                  className="min-h-[52px] flex-1 border-none bg-transparent shadow-none focus-visible:ring-0"
+                  disabled={composerBusy}
+                />
 
-            <Button
-              variant="outline"
-              size="icon"
-              className={`h-11 w-11 ${isRecording ? "border-primary/40 bg-primary/10" : ""}`}
-              onClick={() => (isRecording ? stopRecordingAndSend() : startRecording())}
-              disabled={sendMessage.isPending || isUploadingVoice}
-              aria-label={isRecording ? messages.chat.stop : messages.chat.record}
-            >
-              <Mic className="h-5 w-5" />
-            </Button>
-
-            <Button
-              size="icon"
-              className="h-11 w-11"
-              onClick={() =>
-                sendMessage.mutate({
-                  nextContent: content.trim(),
-                  replyToId: quoted?.id ?? undefined,
-                })
-              }
-              disabled={sendMessage.isPending || isUploadingVoice || !content.trim()}
-              aria-label={messages.chat.send}
-            >
-              <Send className="h-5 w-5" />
-            </Button>
+                {canSendText ? (
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={handleSendText}
+                    aria-label={messages.chat.send}
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => void startRecording()}
+                    disabled={composerBusy}
+                    aria-label={messages.chat.record}
+                  >
+                    {isUploadingVoice ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           {isUploadingVoice ? (
             <div className="mt-2 text-xs text-muted-foreground">{messages.chat.uploadingVoice}</div>
           ) : null}
 
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/35 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-xl">
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/45 px-3 py-1.5 text-xs font-medium text-muted-foreground backdrop-blur-xl">
               <SmilePlus className="h-4 w-4 text-primary/80" />
-              <span>Emoji</span>
+              <span>{chatShellCopy.keyboardHint}</span>
             </div>
             {quickEmojis.map((emoji) => (
               <button
                 key={`compose-${emoji}`}
                 type="button"
-                className="soft-control inline-flex h-10 items-center justify-center rounded-full border border-white/70 bg-white/35 px-4 text-sm text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+                className="soft-control inline-flex h-10 items-center justify-center rounded-full border border-border/60 bg-background/45 px-4 text-sm text-foreground/80 backdrop-blur-xl hover:bg-background/72 active:scale-[0.98]"
                 onClick={() => setContent((v) => `${v}${emoji}`)}
-                disabled={sendMessage.isPending || isUploadingVoice}
+                disabled={composerBusy || isRecording}
                 aria-label={emoji}
               >
                 {emoji}
