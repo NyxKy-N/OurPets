@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import "./globals.css";
@@ -60,27 +59,11 @@ export default async function RootLayout({
                   </div>
                 </div>
 
-                <nav aria-label="Footer" className="flex flex-wrap items-center gap-2">
-                  <Link
-                    href="/discover"
-                    prefetch={false}
-                    className="soft-control inline-flex h-11 items-center rounded-full border border-white/70 bg-white/40 px-4 text-sm font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background/60 active:scale-[0.98]"
-                  >
-                    {messages.header.discover}
-                  </Link>
-                  <Link
-                    href="/pets/new"
-                    prefetch={false}
-                    className="soft-control inline-flex h-11 items-center rounded-full border border-white/70 bg-white/40 px-4 text-sm font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background/60 active:scale-[0.98]"
-                  >
-                    {messages.header.addPet}
-                  </Link>
-                </nav>
               </div>
             </div>
 
             <div className="navbar-shell fixed inset-x-0 bottom-0 hidden w-full border-t border-border/60 bg-background/55 backdrop-blur-xl sm:block">
-              <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <div className="text-lg font-semibold tracking-tight text-foreground/92">
                     <span className="gradient-text">OurPets</span>
@@ -92,23 +75,6 @@ export default async function RootLayout({
                     © {new Date().getFullYear()} OurPets
                   </div>
                 </div>
-
-                <nav aria-label="Footer" className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <Link
-                    href="/discover"
-                    prefetch={false}
-                    className="soft-control inline-flex h-11 items-center rounded-full border border-white/70 bg-white/40 px-4 text-sm font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background/60 active:scale-[0.98]"
-                  >
-                    {messages.header.discover}
-                  </Link>
-                  <Link
-                    href="/pets/new"
-                    prefetch={false}
-                    className="soft-control inline-flex h-11 items-center rounded-full border border-white/70 bg-white/40 px-4 text-sm font-medium text-foreground/80 backdrop-blur-xl hover:bg-white/55 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background/60 active:scale-[0.98]"
-                  >
-                    {messages.header.addPet}
-                  </Link>
-                </nav>
               </div>
             </div>
           </footer>

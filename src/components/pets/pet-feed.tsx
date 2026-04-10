@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowUp, LayoutGrid, LayoutList, Search, SlidersHorizontal, Sparkles } from "lucide-react";
+import { ArrowUp, ChevronLeft, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -41,6 +42,7 @@ export function PetFeed() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
   const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -305,14 +307,43 @@ export function PetFeed() {
         </div>
       ) : null}
 
-      <button
-        type="button"
-        className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
-        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        aria-label="返回顶部"
-      >
-        <ArrowUp className="h-5 w-5" />
-      </button>
+      {floatingActionsOpen ? (
+        <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:hidden">
+          <button
+            type="button"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+            aria-label="返回顶部"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+          <Link
+            href="/pets/new"
+            prefetch={false}
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            aria-label={messages.header.addPet}
+          >
+            <Plus className="h-5 w-5" />
+          </Link>
+          <button
+            type="button"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            onClick={() => setFloatingActionsOpen(false)}
+            aria-label={messages.common.cancel}
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+          onClick={() => setFloatingActionsOpen(true)}
+          aria-label="展开"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+      )}
     </section>
   );
 }

@@ -14,6 +14,7 @@ import { apiFetch } from "@/lib/fetcher";
 import { formatCompactLabel, formatPetAge } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 
 export type PetFeedItem = {
@@ -71,15 +72,45 @@ export function PetCard({
       <Card className={cn("group overflow-hidden rounded-[30px] p-1", className)}>
         <div className="flex items-center justify-between gap-2 px-3 pb-0 pt-3 sm:px-4">
           <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
-            <Link href={ownerHref} prefetch={false} className="inline-flex min-w-0 items-center">
-              <span className="truncate">
-                {messages.petCard.owner}: {pet.owner.name ?? messages.common.unknown}
+            <Link href={ownerHref} prefetch={false} className="inline-flex min-w-0 items-center gap-2">
+              <Avatar className="h-7 w-7 shrink-0 border border-border/70 bg-background/55">
+                <AvatarImage src={pet.owner.image ?? undefined} />
+                <AvatarFallback>
+                  {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate text-sm font-medium text-foreground/90">
+                {pet.owner.name ?? messages.common.unknown}
               </span>
             </Link>
           </Button>
           {canManagePet ? (
             <div className="flex items-center gap-2">
-              <Button asChild variant="ghost" size="sm">
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className={cn("h-9 w-9 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden", isGrid ? "" : "hidden")}
+                aria-label={messages.petDetail.edit}
+              >
+                <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
+                  <Pencil className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn("h-9 w-9 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden", isGrid ? "" : "hidden")}
+                aria-label={messages.petDetail.delete}
+                onClick={() => {
+                  if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
+                }}
+                disabled={deletePet.isPending}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+
+              <Button asChild variant="ghost" size="sm" className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}>
                 <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
                   <Pencil className="mr-1 h-4 w-4" />
                   {messages.petDetail.edit}
@@ -88,6 +119,7 @@ export function PetCard({
               <Button
                 variant="ghost"
                 size="sm"
+                className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}
                 onClick={() => {
                   if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
                 }}

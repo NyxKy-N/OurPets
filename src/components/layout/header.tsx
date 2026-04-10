@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Sun, X } from "lucide-react";
+import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { useI18n } from "@/app/providers";
@@ -66,22 +66,53 @@ export function Header() {
 
   React.useEffect(() => {
     const lastYRef = { value: window.scrollY };
+    const anchorYRef = { value: window.scrollY };
+    const hiddenRef = { value: false };
+    const tickingRef = { value: false };
     const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 18);
+      if (tickingRef.value) return;
+      tickingRef.value = true;
+      window.requestAnimationFrame(() => {
+        tickingRef.value = false;
 
-      const isDesktop = window.matchMedia("(min-width: 640px)").matches;
-      if (!isDesktop) {
+        const y = window.scrollY;
+        setScrolled(y > 18);
+
+        const isDesktop = window.matchMedia("(min-width: 640px)").matches;
+        if (!isDesktop) {
+          lastYRef.value = y;
+          anchorYRef.value = y;
+          hiddenRef.value = false;
+          setDesktopHidden(false);
+          return;
+        }
+
+        const delta = y - lastYRef.value;
+        if (Math.abs(delta) < 6) {
+          lastYRef.value = y;
+          return;
+        }
+
+        const hideThreshold = 116;
+        const hideHysteresis = 26;
+        const showHysteresis = 18;
+
+        if (!hiddenRef.value) {
+          if (delta > 0 && y > hideThreshold && y - anchorYRef.value > hideHysteresis) {
+            hiddenRef.value = true;
+            anchorYRef.value = y;
+            setDesktopHidden(true);
+          }
+        } else {
+          if (delta < 0 && anchorYRef.value - y > showHysteresis) {
+            hiddenRef.value = false;
+            anchorYRef.value = y;
+            setDesktopHidden(false);
+          }
+        }
+
         lastYRef.value = y;
-        return;
-      }
-
-      const delta = y - lastYRef.value;
-      if (Math.abs(delta) < 8) return;
-
-      if (delta > 0 && y > 88) setDesktopHidden(true);
-      if (delta < 0) setDesktopHidden(false);
-      lastYRef.value = y;
+      });
     };
 
     onScroll();
@@ -111,14 +142,6 @@ export function Header() {
       active: pathname === "/feedback",
     },
   ];
-
-  const utilityLinks = [
-    ...(session
-      ? [
-          { href: "/pets/new", label: messages.header.addPet, active: pathname === "/pets/new" },
-        ]
-      : []),
-  ];
   const notificationsItems = notifications.data?.items ?? [];
   const unreadCount = notifications.data?.unreadCount ?? 0;
   const displayName = me.data?.name ?? session?.user?.name ?? messages.common.account;
@@ -127,14 +150,47 @@ export function Header() {
 
   const navContent = (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <Link
-          href="/"
-          prefetch={false}
-          className="gradient-text shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-[transform,opacity] duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80 sm:text-xl"
-        >
-          OurPets
-        </Link>
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href="/"
+            prefetch={false}
+            className="gradient-text shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-[transform,opacity] duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80 sm:text-xl"
+          >
+            OurPets
+          </Link>
+
+          <nav className="hidden min-w-0 flex-nowrap items-center gap-2 overflow-x-auto text-sm text-muted-foreground [-webkit-overflow-scrolling:touch] sm:flex sm:overflow-visible">
+            {primaryLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                prefetch={false}
+                aria-current={item.active ? "page" : undefined}
+                className={`inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] ${
+                  item.active
+                    ? "glass-button border-primary/28 bg-primary/[0.16] text-foreground shadow-[0_14px_32px_hsl(var(--primary)/0.16)]"
+                    : "glass-button text-foreground/78"
+                }`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {session ? (
+          <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 sm:block">
+            <Link
+              href="/pets/new"
+              prefetch={false}
+              aria-label={messages.header.addPet}
+              className="glass-button inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground/85"
+            >
+              <Plus className="h-5 w-5" />
+            </Link>
+          </div>
+        ) : null}
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           <Button
@@ -309,7 +365,7 @@ export function Header() {
       </div>
 
       <div
-        className={`${mobileNavOpen ? "flex" : "hidden"} flex-col gap-2.5 sm:flex sm:flex-row sm:items-center sm:justify-between`}
+        className={`${mobileNavOpen ? "flex" : "hidden"} flex-col gap-2.5 sm:hidden`}
       >
         <nav className="flex flex-nowrap items-center gap-2 overflow-x-auto text-sm text-muted-foreground [-webkit-overflow-scrolling:touch] sm:overflow-visible">
           {primaryLinks.map((item) => (
@@ -329,27 +385,6 @@ export function Header() {
             </Link>
           ))}
         </nav>
-
-        {utilityLinks.length > 0 ? (
-          <nav className="flex flex-nowrap items-center gap-2 overflow-x-auto text-sm text-muted-foreground [-webkit-overflow-scrolling:touch] sm:overflow-visible">
-            {utilityLinks.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={false}
-                aria-current={item.active ? "page" : undefined}
-                onClick={() => setMobileNavOpen(false)}
-                className={`inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] ${
-                  item.active
-                    ? "glass-button border-primary/24 bg-primary/[0.14] text-foreground"
-                    : "glass-button text-foreground/72"
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
       </div>
     </>
   );
@@ -364,7 +399,7 @@ export function Header() {
 
       <div
         className={cn(
-          "navbar-shell navbar-edge hidden w-full bg-background/55 backdrop-blur-xl sm:fixed sm:inset-x-0 sm:top-0 sm:block sm:origin-top sm:transform-gpu sm:transition-[transform,opacity] sm:duration-500 [transition-timing-function:var(--ease-soft)]",
+          "navbar-shell hidden w-full border-b border-border/60 bg-background/55 backdrop-blur-xl sm:fixed sm:inset-x-0 sm:top-0 sm:block sm:origin-top sm:transform-gpu sm:transition-[transform,opacity] sm:duration-500 [transition-timing-function:var(--ease-soft)]",
           scrolled ? "is-scrolled" : "",
           desktopHidden ? "sm:pointer-events-none sm:-translate-y-3 sm:scale-[0.92] sm:opacity-0" : "sm:translate-y-0 sm:scale-100 sm:opacity-100"
         )}
