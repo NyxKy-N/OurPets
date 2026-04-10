@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 type PetsPage = { items: PetFeedItem[]; nextCursor: string | null };
 type PetTypeFilter = "ALL" | "DOG" | "CAT" | "OTHER";
 type PetSortFilter = "LATEST" | "POPULAR";
+const overlayOpenEventName = "ourpets:overlay-open";
 
 function useIntersectionObserver<T extends Element>(options?: IntersectionObserverInit) {
   const ref = React.useRef<T | null>(null);
@@ -192,6 +193,21 @@ export function PetFeed() {
     }
   }, [mobileTwoColumn]);
 
+  const announceOverlayOpen = React.useCallback((source: string) => {
+    window.dispatchEvent(new CustomEvent(overlayOpenEventName, { detail: { source } }));
+  }, []);
+
+  React.useEffect(() => {
+    const onOverlayOpen = (event: Event) => {
+      const source = (event as CustomEvent<{ source?: string }>).detail?.source;
+      if (source !== "discover-mobile-filters") {
+        setMobileFiltersOpen(false);
+      }
+    };
+    window.addEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
+    return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
+  }, []);
+
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
     queryFn: ({ pageParam }) => {
@@ -284,7 +300,13 @@ export function PetFeed() {
                         variant="outline"
                         size="icon"
                         type="button"
-                        onClick={() => setMobileFiltersOpen((v) => !v)}
+                        onClick={() =>
+                          setMobileFiltersOpen((current) => {
+                            const next = !current;
+                            if (next) announceOverlayOpen("discover-mobile-filters");
+                            return next;
+                          })
+                        }
                         aria-expanded={mobileFiltersOpen}
                         aria-label={mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
                         className={mobileFiltersOpen ? "border-primary/30 bg-primary/10 text-foreground" : ""}
@@ -307,7 +329,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[28px] border border-border/70 bg-background/55 p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
+              className={`glass-panel-strong discover-dropdown-surface motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[28px] p-3.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"

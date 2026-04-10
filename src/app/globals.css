@@ -151,6 +151,13 @@
       backdrop-filter: blur(32px) saturate(165%);
     }
 
+    .discover-shell .discover-dropdown-surface {
+      background:
+        linear-gradient(180deg, hsl(0 0% 100% / 0.68), hsl(0 0% 100% / 0.44));
+      border-color: hsl(0 0% 100% / 0.82);
+      backdrop-filter: blur(32px) saturate(165%);
+    }
+
     .dark .discover-shell,
     .dark .discover-shell .glass-panel,
     .dark .discover-shell .glass-panel-strong {
@@ -161,6 +168,13 @@
     }
 
     .dark .discover-shell .floating-frosted-panel {
+      background:
+        linear-gradient(180deg, hsl(0 0% 100% / 0.12), hsl(0 0% 100% / 0.06));
+      border-color: hsl(0 0% 100% / 0.16);
+      backdrop-filter: blur(26px) saturate(142%);
+    }
+
+    .dark .discover-shell .discover-dropdown-surface {
       background:
         linear-gradient(180deg, hsl(0 0% 100% / 0.12), hsl(0 0% 100% / 0.06));
       border-color: hsl(0 0% 100% / 0.16);

@@ -37,6 +37,8 @@ type NotificationsPayload = {
   unreadCount: number;
 };
 
+const overlayOpenEventName = "ourpets:overlay-open";
+
 export function Header() {
   const qc = useQueryClient();
   const { data: session, status } = useSession();
@@ -47,6 +49,9 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+  const [languageMenuOpen, setLanguageMenuOpen] = React.useState(false);
+  const [notificationsMenuOpen, setNotificationsMenuOpen] = React.useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -125,6 +130,22 @@ export function Header() {
     setMobileNavOpen(false);
   }, [pathname]);
 
+  const announceOverlayOpen = React.useCallback((source: string) => {
+    window.dispatchEvent(new CustomEvent(overlayOpenEventName, { detail: { source } }));
+  }, []);
+
+  React.useEffect(() => {
+    const onOverlayOpen = (event: Event) => {
+      const source = (event as CustomEvent<{ source?: string }>).detail?.source;
+      if (source !== "header-mobile-nav") setMobileNavOpen(false);
+      if (source !== "header-language-menu") setLanguageMenuOpen(false);
+      if (source !== "header-notifications-menu") setNotificationsMenuOpen(false);
+      if (source !== "header-account-menu") setAccountMenuOpen(false);
+    };
+    window.addEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
+    return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
+  }, []);
+
   const primaryLinks = [
     { href: "/", label: messages.header.home, active: pathname === "/" },
     {
@@ -196,7 +217,13 @@ export function Header() {
             size="icon"
             className="sm:hidden"
             aria-label="Menu"
-            onClick={() => setMobileNavOpen((v) => !v)}
+            onClick={() =>
+              setMobileNavOpen((current) => {
+                const next = !current;
+                if (next) announceOverlayOpen("header-mobile-nav");
+                return next;
+              })
+            }
           >
             {mobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
@@ -213,7 +240,13 @@ export function Header() {
 
           {!session ? (
             <>
-              <DropdownMenu>
+              <DropdownMenu
+                open={languageMenuOpen}
+                onOpenChange={(open) => {
+                  setLanguageMenuOpen(open);
+                  if (open) announceOverlayOpen("header-language-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 gap-2 px-3.5">
                     <Languages className="h-4 w-4" />
@@ -246,7 +279,13 @@ export function Header() {
             </>
           ) : (
             <>
-              <DropdownMenu>
+              <DropdownMenu
+                open={languageMenuOpen}
+                onOpenChange={(open) => {
+                  setLanguageMenuOpen(open);
+                  if (open) announceOverlayOpen("header-language-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="hidden h-10 gap-2 px-3.5 sm:inline-flex">
                     <Languages className="h-4 w-4" />
@@ -284,7 +323,13 @@ export function Header() {
             <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
           ) : session ? (
             <>
-              <DropdownMenu>
+              <DropdownMenu
+                open={notificationsMenuOpen}
+                onOpenChange={(open) => {
+                  setNotificationsMenuOpen(open);
+                  if (open) announceOverlayOpen("header-notifications-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -300,7 +345,7 @@ export function Header() {
                     ) : null}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[22rem] p-2">
+                <DropdownMenuContent align="end" className="z-[220] w-[22rem] p-2">
                   <div className="flex items-center justify-between px-2 py-2">
                     <DropdownMenuLabel className="px-0 py-0">{messages.notifications.title}</DropdownMenuLabel>
                     <Button
@@ -362,7 +407,13 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu>
+              <DropdownMenu
+                open={accountMenuOpen}
+                onOpenChange={(open) => {
+                  setAccountMenuOpen(open);
+                  if (open) announceOverlayOpen("header-account-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 px-2.5">
                     <Avatar className="h-8 w-8">
@@ -376,7 +427,7 @@ export function Header() {
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="z-[220] w-56">
                   <DropdownMenuLabel className="flex flex-col">
                     <span className="text-sm">{displayName}</span>
                     <span className="text-xs font-normal text-muted-foreground">
@@ -435,7 +486,7 @@ export function Header() {
 
       <div
         className={cn(
-          "motion-collapse absolute left-0 right-0 top-full z-[120] mt-3 flex flex-col gap-2.5 overflow-hidden rounded-[30px] border border-border/70 bg-background/55 px-4 py-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl sm:hidden",
+          "glass-panel-strong motion-collapse absolute left-0 right-0 top-full z-[120] mt-3 flex flex-col gap-2.5 overflow-hidden rounded-[30px] px-4 py-3.5 sm:hidden",
           "transform-gpu",
           mobileNavOpen ? "max-h-[260px] opacity-100 translate-y-0 scale-100" : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
         )}
