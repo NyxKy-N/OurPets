@@ -46,8 +46,17 @@ export function PetFeed() {
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
   const [fabY, setFabY] = React.useState<number | null>(null);
   const draggingRef = React.useRef(false);
-  const startYRef = React.useRef(0);
+  const pointerIdRef = React.useRef<number | null>(null);
+  const startClientYRef = React.useRef(0);
   const startFabYRef = React.useRef(0);
+  const pendingYRef = React.useRef<number | null>(null);
+  const rafIdRef = React.useRef<number | null>(null);
+
+  const clampFabY = React.useCallback((y: number) => {
+    const min = 84;
+    const max = Math.max(window.innerHeight - 120, min + 1);
+    return Math.min(Math.max(y, min), max);
+  }, []);
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -63,12 +72,13 @@ export function PetFeed() {
     try {
       const stored = localStorage.getItem("discover:fabSide");
       if (stored === "left" || stored === "right") setFabSide(stored);
-      const y = localStorage.getItem("discover:fabY");
-      if (y) setFabY(Number(y));
-      if (!y) setFabY(Math.max(window.innerHeight - 108, 84));
+      const rawY = localStorage.getItem("discover:fabY");
+      const parsedY = rawY ? Number(rawY) : Number.NaN;
+      const defaultY = clampFabY(window.innerHeight - 108);
+      setFabY(Number.isFinite(parsedY) ? clampFabY(parsedY) : defaultY);
     } catch {
     }
-  }, []);
+  }, [clampFabY]);
 
   React.useEffect(() => {
     try {
@@ -78,17 +88,15 @@ export function PetFeed() {
   }, [fabSide]);
 
   React.useEffect(() => {
-    try {
-      if (fabY != null) localStorage.setItem("discover:fabY", String(fabY));
-    } catch {
-    }
-  }, [fabY]);
-
-  function clampFabY(y: number) {
-    const min = 84;
-    const max = Math.max(window.innerHeight - 120, min + 1);
-    return Math.min(Math.max(y, min), max);
-  }
+    const onResize = () => {
+      setFabY((current) => {
+        if (current == null) return current;
+        return clampFabY(current);
+      });
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [clampFabY]);
 
   React.useEffect(() => {
     try {
@@ -350,30 +358,74 @@ export function PetFeed() {
       ) : null}
 
       <div
-        className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 sm:hidden`}
-        style={fabY != null ? { top: fabY } : { bottom: "1.5rem" }}
-        onTouchStart={(e) => {
+        className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
+        style={
+          fabY != null
+            ? { top: 0, transform: `translate3d(0, ${fabY}px, 0)`, willChange: "transform" }
+            : { bottom: "1.5rem" }
+        }
+        onPointerDown={(e) => {
           if (!isMobile) return;
-          const t = e.touches[0];
-          draggingRef.current = true;
-          startYRef.current = t.clientY;
-          startFabYRef.current = fabY ?? Math.max(window.innerHeight - 108, 84);
+          if (e.pointerType === "mouse") return;
+          pointerIdRef.current = e.pointerId;
+          draggingRef.current = false;
+          startClientYRef.current = e.clientY;
+          startFabYRef.current = fabY ?? clampFabY(window.innerHeight - 108);
+          pendingYRef.current = null;
         }}
-        onTouchMove={(e) => {
-          if (!isMobile || !draggingRef.current) return;
-          const t = e.touches[0];
-          const delta = t.clientY - startYRef.current;
-          const next = clampFabY(startFabYRef.current + delta);
-          setFabY(next);
-          try {
-            e.preventDefault();
-          } catch {
+        onPointerMove={(e) => {
+          if (!isMobile) return;
+          if (pointerIdRef.current !== e.pointerId) return;
+          const delta = e.clientY - startClientYRef.current;
+          if (!draggingRef.current && Math.abs(delta) < 6) return;
+          if (!draggingRef.current) {
+            draggingRef.current = true;
+            try {
+              (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+            } catch {
+            }
           }
+          const next = clampFabY(startFabYRef.current + delta);
+          pendingYRef.current = next;
+          if (rafIdRef.current != null) return;
+          rafIdRef.current = window.requestAnimationFrame(() => {
+            rafIdRef.current = null;
+            const y = pendingYRef.current;
+            if (y == null) return;
+            pendingYRef.current = null;
+            setFabY(y);
+          });
+          e.preventDefault();
         }}
-        onTouchEnd={() => {
+        onPointerUp={(e) => {
+          if (pointerIdRef.current !== e.pointerId) return;
+          pointerIdRef.current = null;
+          const finalY = pendingYRef.current ?? fabY;
+          if (rafIdRef.current != null) {
+            window.cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+          }
+          if (pendingYRef.current != null) {
+            const next = pendingYRef.current;
+            pendingYRef.current = null;
+            setFabY(next);
+          }
+          if (draggingRef.current && finalY != null) {
+            try {
+              localStorage.setItem("discover:fabY", String(finalY));
+            } catch {
+            }
+          }
           draggingRef.current = false;
         }}
-        onTouchCancel={() => {
+        onPointerCancel={(e) => {
+          if (pointerIdRef.current !== e.pointerId) return;
+          pointerIdRef.current = null;
+          if (rafIdRef.current != null) {
+            window.cancelAnimationFrame(rafIdRef.current);
+            rafIdRef.current = null;
+          }
+          pendingYRef.current = null;
           draggingRef.current = false;
         }}
       >
