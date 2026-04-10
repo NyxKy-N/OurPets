@@ -7,6 +7,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 import { CalendarDays, Check, ChevronDown, ShieldCheck, X } from "lucide-react";
 
@@ -138,35 +139,57 @@ function FormDropdown({
   const selected = options.find((option) => option.value === value) ?? options[0];
   const [open, setOpen] = React.useState(false);
   const rootRef = React.useRef<HTMLDivElement | null>(null);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
+  const menuRef = React.useRef<HTMLDivElement | null>(null);
+  const [menuRect, setMenuRect] = React.useState<{ left: number; top: number; width: number } | null>(null);
+
+  const updateMenuRect = React.useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    setMenuRect({
+      left: rect.left,
+      top: rect.bottom + 8,
+      width: rect.width,
+    });
+  }, []);
 
   React.useEffect(() => {
     if (!open) return;
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
       if (!target) return;
-      if (rootRef.current?.contains(target)) return;
+      if (triggerRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
       setOpen(false);
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
+    updateMenuRect();
+    const onViewportChange = () => updateMenuRect();
     document.addEventListener("pointerdown", onPointerDown);
     document.addEventListener("keydown", onKeyDown);
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
     };
-  }, [open]);
+  }, [open, updateMenuRect]);
 
   return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "glass-panel-strong inline-flex h-11 w-full items-center justify-between rounded-2xl px-4 text-left text-sm text-foreground transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:var(--ease-bounce)] hover:border-primary/30 hover:bg-background/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2",
+          "glass-panel-strong inline-flex h-11 w-full items-center justify-between rounded-2xl px-4 text-left text-sm text-foreground transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:var(--ease-bounce)] hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2",
           open ? "border-primary/35 bg-background/80 shadow-[0_16px_36px_hsl(var(--primary)/0.12)]" : "",
           className
         )}
@@ -174,40 +197,51 @@ function FormDropdown({
         <span className="truncate">{selected?.label ?? ""}</span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300", open ? "rotate-180" : "")} />
       </button>
-      {open ? (
-        <div
-          role="listbox"
-          className={cn(
-            "glass-panel-strong absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[24px] p-1.5",
-            contentClassName
-          )}
-        >
-          <div className="space-y-1">
-            {options.map((option) => {
-              const isSelected = option.value === value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="option"
-                  aria-selected={isSelected}
-                  onClick={() => {
-                    onValueChange(option.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "soft-control relative flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm text-foreground/85 backdrop-blur-xl transition-[transform,background-color,color,box-shadow] duration-300 [transition-timing-function:var(--ease-bounce)] hover:bg-background/72",
-                    isSelected ? "bg-background/78 text-foreground shadow-[0_10px_24px_hsl(var(--foreground)/0.08)]" : "bg-transparent"
-                  )}
-                >
-                  <span className="truncate">{option.label}</span>
-                  {isSelected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ) : null}
+      {open && menuRect && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              ref={menuRef}
+              role="listbox"
+              className={cn(
+                "glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground shadow-[0_22px_48px_hsl(var(--foreground)/0.12)]",
+                contentClassName
+              )}
+              style={{
+                left: menuRect.left,
+                top: menuRect.top,
+                width: menuRect.width,
+              }}
+            >
+              <div className="space-y-1">
+                {options.map((option) => {
+                  const isSelected = option.value === value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        onValueChange(option.value);
+                        setOpen(false);
+                      }}
+                      className={cn(
+                        "soft-control relative flex w-full items-center justify-between rounded-2xl border border-transparent bg-background/45 px-3 py-2 text-left text-sm text-foreground/85 backdrop-blur-xl transition-[transform,background-color,color,box-shadow,border-color] duration-300 [transition-timing-function:var(--ease-bounce)] hover:border-border/70 hover:bg-background/70",
+                        isSelected
+                          ? "border-primary/20 bg-background/78 text-foreground shadow-[0_10px_24px_hsl(var(--foreground)/0.08)]"
+                          : ""
+                      )}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isSelected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 }
