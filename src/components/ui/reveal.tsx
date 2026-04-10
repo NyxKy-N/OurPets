@@ -16,6 +16,23 @@ export function Reveal({
   delay?: number;
   once?: boolean;
 }) {
+  const [reduced, setReduced] = React.useState(false);
+  React.useEffect(() => {
+    try {
+      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const handler = () => setReduced(m.matches || document.documentElement.classList.contains("reduced-effects"));
+      handler();
+      m.addEventListener("change", handler);
+      return () => m.removeEventListener("change", handler);
+    } catch {
+      setReduced(document.documentElement.classList.contains("reduced-effects"));
+    }
+  }, []);
+
+  if (reduced) {
+    return <div className={cn(className)}>{children}</div>;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16, scale: 0.986 }}

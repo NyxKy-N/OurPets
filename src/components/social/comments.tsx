@@ -168,7 +168,7 @@ export function Comments({
     const canEdit = viewerId === comment.userId || viewerIsAdmin;
 
     return (
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1 sm:gap-2">
         {viewerId ? (
           <Button
             variant="ghost"
@@ -181,8 +181,8 @@ export function Comments({
             }}
             disabled={deleteComment.isPending || updateComment.isPending || addComment.isPending}
           >
-            <Reply className="mr-1 h-4 w-4" />
-            {messages.comments.reply}
+            <Reply className="h-4 w-4" />
+            <span className="ml-1 hidden sm:inline">{messages.comments.reply}</span>
           </Button>
         ) : null}
         {canEdit ? (
@@ -198,8 +198,8 @@ export function Comments({
               }}
               disabled={deleteComment.isPending || updateComment.isPending || addComment.isPending}
             >
-              <Pencil className="mr-1 h-4 w-4" />
-              {messages.comments.edit}
+              <Pencil className="h-4 w-4" />
+              <span className="ml-1 hidden sm:inline">{messages.comments.edit}</span>
             </Button>
             <Button
               variant="ghost"
@@ -208,8 +208,8 @@ export function Comments({
               disabled={deleteComment.isPending || updateComment.isPending || addComment.isPending}
               aria-label={messages.comments.deleteLabel}
             >
-              <Trash2 className="mr-1 h-4 w-4 text-muted-foreground" />
-              {messages.comments.delete}
+              <Trash2 className="h-4 w-4 text-muted-foreground" />
+              <span className="ml-1 hidden sm:inline">{messages.comments.delete}</span>
             </Button>
           </>
         ) : null}
@@ -272,7 +272,7 @@ export function Comments({
             </Avatar>
           </Link>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <div className="min-w-0">
                 <Link
                   href={profileHref(comment.user.id)}
@@ -281,13 +281,15 @@ export function Comments({
                 >
                   {comment.user.name ?? messages.common.user}
                 </Link>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-muted-foreground whitespace-nowrap">
                   {formatDateTime(locale, comment.createdAt)}
                 </div>
               </div>
               {renderCommentActions(comment)}
             </div>
-            {renderCommentBody(comment)}
+            <div className="min-w-0">
+              {renderCommentBody(comment)}
+            </div>
             {renderReplyComposer(comment.id)}
             {!isReply && comment.replies?.length ? (
               <div className="mt-4 space-y-3 border-l border-border/60 pl-4 sm:pl-5">

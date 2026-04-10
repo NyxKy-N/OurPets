@@ -120,6 +120,20 @@ export function Providers({
 }) {
   const queryClient = getQueryClient();
 
+  React.useEffect(() => {
+    try {
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      // @ts-expect-error deviceMemory is not in TS lib dom by default
+      const dm: number | undefined = navigator.deviceMemory;
+      const hc: number | undefined = navigator.hardwareConcurrency;
+      const lowMemory = typeof dm === "number" && dm <= 4;
+      const lowCpu = typeof hc === "number" && hc > 0 && hc <= 4;
+      const reduced = prefersReducedMotion || lowMemory || lowCpu;
+      document.documentElement.classList.toggle("reduced-effects", Boolean(reduced));
+    } catch {
+    }
+  }, []);
+
   return (
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>

@@ -98,7 +98,7 @@ export function PetFeed() {
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
   const hasActiveSearch = Boolean(q.trim());
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
-    rootMargin: "800px",
+    rootMargin: "600px",
   });
 
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
