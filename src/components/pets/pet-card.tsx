@@ -76,101 +76,54 @@ export function PetCard({
       className={cn("group overflow-hidden rounded-[30px] p-1", className)}
       style={{ viewTransitionName: `pet-shell-${pet.id}` }}
     >
-      <div className={cn("flex items-center justify-between gap-2 pb-0 sm:px-4", isCompact ? "px-2.5 pt-2.5" : "px-3 pt-3")}>
-        <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
-          <Link href={ownerHref} className="inline-flex min-w-0 items-center gap-2">
-            <Avatar className="h-7 w-7 shrink-0 border border-border/70 bg-background/55">
-              <AvatarImage src={pet.owner.image ?? undefined} />
-              <AvatarFallback>
-                {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
-              </AvatarFallback>
-            </Avatar>
-            <span className="truncate text-sm font-medium text-foreground/90">
-              {pet.owner.name ?? messages.common.unknown}
-            </span>
-          </Link>
-        </Button>
-        {canManagePet ? (
-          <div className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="outline"
-              size="icon"
-              className={cn(
-                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
-                isGrid ? "" : "hidden"
-              )}
-              aria-label={messages.petDetail.edit}
-            >
-              <Link href={`/pet/${pet.id}/edit`}>
-                <Pencil className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className={cn(
-                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
-                isGrid ? "" : "hidden"
-              )}
-              aria-label={messages.petDetail.delete}
-              onClick={() => {
-                if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
-              }}
-              disabled={deletePet.isPending}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-
-            <Button
-              asChild
-              variant="ghost"
-              size="sm"
-              className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}
-            >
-              <Link href={`/pet/${pet.id}/edit`}>
-                <Pencil className="mr-1 h-4 w-4" />
-                {messages.petDetail.edit}
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}
-              onClick={() => {
-                if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
-              }}
-              disabled={deletePet.isPending}
-            >
-              <Trash2 className="mr-1 h-4 w-4" />
-              {messages.petDetail.delete}
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button
-              asChild
-              variant="outline"
-              size="icon"
-              className={cn(
-                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
-                isGrid ? "" : "hidden"
-              )}
-              aria-label="举报"
-            >
-              <Link href={reportHref}>
-                <Flag className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm" className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}>
-              <Link href={reportHref}>
-                <Flag className="mr-1 h-4 w-4" />
-                举报
-              </Link>
-            </Button>
-          </div>
-        )}
-      </div>
+      {!isGrid ? (
+        <div className={cn("flex items-center justify-between gap-2 pb-0 sm:px-4", isCompact ? "px-2.5 pt-2.5" : "px-3 pt-3")}>
+          <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
+            <Link href={ownerHref} className="inline-flex min-w-0 items-center gap-2">
+              <Avatar className="h-7 w-7 shrink-0 border border-border/70 bg-background/55">
+                <AvatarImage src={pet.owner.image ?? undefined} />
+                <AvatarFallback>
+                  {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate text-sm font-medium text-foreground/90">
+                {pet.owner.name ?? messages.common.unknown}
+              </span>
+            </Link>
+          </Button>
+          {canManagePet ? (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link href={`/pet/${pet.id}/edit`}>
+                  <Pencil className="mr-1 h-4 w-4" />
+                  {messages.petDetail.edit}
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => {
+                  if (confirm(messages.petDetail.deleteConfirm)) deletePet.mutate();
+                }}
+                disabled={deletePet.isPending}
+              >
+                <Trash2 className="mr-1 h-4 w-4" />
+                {messages.petDetail.delete}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+                <Link href={reportHref}>
+                  <Flag className="mr-1 h-4 w-4" />
+                  举报
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : null}
       <Link
         href={petHref}
         className="block"
@@ -178,7 +131,7 @@ export function PetCard({
         <div
           className={cn(
             "rounded-[26px] sm:p-5",
-            isCompact ? "p-3" : "p-4",
+            isCompact ? "p-2.5" : "p-4",
             isGrid ? "flex h-full flex-col gap-4" : "flex flex-col gap-5 sm:flex-row sm:items-center"
           )}
         >
@@ -186,7 +139,7 @@ export function PetCard({
             className={cn(
               "relative w-full overflow-hidden rounded-[24px] bg-muted",
               isGrid
-                ? "aspect-[4/3.7] min-h-[184px] sm:min-h-[220px]"
+                ? "aspect-[4/5.1] min-h-[220px] sm:min-h-[280px]"
                 : "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
             )}
             style={{ viewTransitionName: `pet-image-${pet.id}` }}
@@ -209,12 +162,49 @@ export function PetCard({
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-85" />
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/22 to-transparent opacity-70" />
+            {isGrid ? (
+              <>
+                <div className="absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-xs text-white/92 backdrop-blur-xl">
+                  <Avatar className="h-6 w-6 shrink-0 border border-white/20 bg-white/15">
+                    <AvatarImage src={pet.owner.image ?? undefined} />
+                    <AvatarFallback>
+                      {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="truncate font-medium">{pet.owner.name ?? messages.common.unknown}</span>
+                </div>
+                <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <div
+                      className={cn(
+                        "line-clamp-2 font-semibold tracking-[-0.04em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.28)]",
+                        isCompact ? "text-base" : "text-lg"
+                      )}
+                      style={{ viewTransitionName: `pet-title-${pet.id}` }}
+                    >
+                      {pet.name}
+                    </div>
+                    <div className="mt-1 inline-flex rounded-full border border-white/20 bg-black/20 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-white/78 uppercase backdrop-blur-xl">
+                      {formatPetAge(locale, pet.birthDate, pet.age)}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
+                      {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                    </div>
+                    <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
+                      {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
-          <div className={cn("min-w-0 flex-1", isGrid ? "flex flex-col" : "")}>
+          <div className={cn("min-w-0 flex-1", isGrid ? "hidden" : "")}>
             <div
               className={cn(
                 "flex flex-col gap-4",
-                isGrid ? "h-full" : "sm:flex-row sm:items-start sm:justify-between"
+                "sm:flex-row sm:items-start sm:justify-between"
               )}
             >
               <div className="min-w-0 space-y-2">
@@ -224,7 +214,7 @@ export function PetCard({
                 <div
                   className={cn(
                     "font-semibold tracking-[-0.04em]",
-                    isGrid ? "line-clamp-1 text-xl" : "truncate text-xl sm:text-2xl"
+                    "truncate text-xl sm:text-2xl"
                   )}
                   style={{ viewTransitionName: `pet-title-${pet.id}` }}
                 >

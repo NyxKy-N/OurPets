@@ -29,9 +29,9 @@ export default function Template({ children }: { children: React.ReactNode }) {
     <motion.div
       key={pathname}
       className="route-transition"
-      initial={{ opacity: 0, scale: 0.992, y: 6 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ type: "spring", mass: 0.72, damping: 24, stiffness: 280 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </motion.div>

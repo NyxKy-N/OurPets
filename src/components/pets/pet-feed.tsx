@@ -38,7 +38,7 @@ function useIntersectionObserver<T extends Element>(options?: IntersectionObserv
 }
 
 export function PetFeed() {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
   const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
@@ -284,147 +284,132 @@ export function PetFeed() {
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const resultsKey = `${type}-${sort}-${q.trim()}`;
+  const discoverGridClass = locale === "zh" ? "lg:grid-cols-3 2xl:grid-cols-4" : "lg:grid-cols-3";
 
   return (
     <section id="pet-feed" className="scroll-mt-28">
-      <div className="glass-panel discover-shell relative z-[90] rounded-[34px] p-5 sm:p-6 lg:p-7">
-        <div className="flex flex-col gap-6 lg:gap-7">
-          <div className="space-y-2">
-            <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
-              {messages.discover.browseLabel}
-            </div>
-            <h2 className="gradient-text text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
-              {messages.discover.title}
-            </h2>
-          </div>
-
-          <div className="relative z-[95] grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
-            <div ref={mobileFiltersAnchorRef} className="glass-panel rounded-[28px] p-3.5">
-              <div className="flex flex-col gap-3">
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder={messages.feed.searchPlaceholder}
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    className="w-full pl-10 focus-visible:ring-primary/45"
-                  />
+      <div className="discover-shell relative z-[90] space-y-4">
+        <div className="glass-panel-strong sticky top-20 z-[95] self-start overflow-hidden rounded-[30px] p-3.5 sm:p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
+                  {messages.discover.browseLabel}
                 </div>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm text-muted-foreground">
-                    {items.length} {messages.common.total}
-                  </p>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="flex items-center gap-2 sm:hidden">
-                      <Button
-                        variant="outline"
-                        onClick={() => query.refetch()}
-                        disabled={query.isFetching}
-                        className="flex-1"
-                      >
-                        {messages.feed.refresh}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() => setMobileTwoColumn((v) => !v)}
-                        aria-label={
-                          mobileTwoColumn
-                            ? messages.discover.switchToSingleColumn
-                            : messages.discover.switchToTwoColumns
-                        }
-                      >
-                        {mobileTwoColumn ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        type="button"
-                        onClick={() =>
-                          setMobileFiltersOpen((current) => {
-                            const next = !current;
-                            if (next) announceOverlayOpen("discover-mobile-filters");
-                            return next;
-                          })
-                        }
-                        aria-expanded={mobileFiltersOpen}
-                        aria-label={mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
-                        className={mobileFiltersOpen ? "border-primary/30 bg-primary/10 text-foreground" : ""}
-                      >
-                        <SlidersHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => query.refetch()}
-                      disabled={query.isFetching}
-                      className="hidden w-full sm:inline-flex sm:w-auto"
-                    >
-                      {messages.feed.refresh}
-                    </Button>
-                  </div>
+                <h2 className="max-w-[22rem] text-xl font-semibold tracking-[-0.03em] text-foreground sm:max-w-none sm:text-2xl">
+                  {messages.discover.title}
+                </h2>
+              </div>
+              <div className="hidden items-center gap-2 sm:flex sm:self-start">
+                <div className="rounded-full border border-border/60 bg-background/55 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
+                  {items.length} {messages.common.total}
                 </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  type="button"
+                  onClick={() => query.refetch()}
+                  disabled={query.isFetching}
+                  aria-label={messages.feed.refresh}
+                >
+                  <Sparkles className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            <div className="hidden sm:grid sm:grid-cols-2 sm:gap-3">
-              <div className="glass-panel rounded-[28px] p-3">
-                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.discover.categoryLabel}
-                </div>
+            <div ref={mobileFiltersAnchorRef} className="grid gap-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder={messages.feed.searchPlaceholder}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  className="h-12 rounded-full border-border/60 bg-background/60 pl-11 pr-4 focus-visible:ring-primary/45"
+                />
+              </div>
+
+              <div className="hidden grid-cols-[minmax(0,1fr)_auto] items-center gap-3 sm:grid">
                 <Tabs
                   value={type}
                   onValueChange={(v) => {
                     if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") setType(v);
                   }}
-                  className="w-full"
+                  className="min-w-0"
                 >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5 xl:grid-cols-4">
-                    <TabsTrigger value="ALL" className="w-full text-[13px] sm:text-sm">
+                  <TabsList className="flex h-auto w-full flex-wrap gap-2 rounded-full bg-transparent p-0">
+                    <TabsTrigger value="ALL" className="min-w-[4.5rem]">
                       {messages.feed.all}
                     </TabsTrigger>
-                    <TabsTrigger value="DOG" className="w-full text-[13px] sm:text-sm">
+                    <TabsTrigger value="DOG" className="min-w-[4.5rem]">
                       {messages.feed.dogs}
                     </TabsTrigger>
-                    <TabsTrigger value="CAT" className="w-full text-[13px] sm:text-sm">
+                    <TabsTrigger value="CAT" className="min-w-[4.5rem]">
                       {messages.feed.cats}
                     </TabsTrigger>
-                    <TabsTrigger value="OTHER" className="w-full text-[13px] sm:text-sm">
+                    <TabsTrigger value="OTHER" className="min-w-[4.5rem]">
                       {messages.feed.other}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
-              </div>
 
-              <div className="glass-panel rounded-[28px] p-3">
-                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.discover.sortLabel}
-                </div>
                 <Tabs
                   value={sort}
                   onValueChange={(v) => {
                     if (v === "LATEST" || v === "POPULAR") setSort(v);
                   }}
-                  className="w-full"
+                  className="w-auto"
                 >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
-                    <TabsTrigger value="LATEST" className="w-full">
+                  <TabsList className="flex h-auto w-auto gap-2 rounded-full bg-transparent p-0">
+                    <TabsTrigger value="LATEST" className="min-w-[5.75rem]">
                       {messages.discover.latest}
                     </TabsTrigger>
-                    <TabsTrigger value="POPULAR" className="w-full">
+                    <TabsTrigger value="POPULAR" className="min-w-[5.75rem]">
                       {messages.discover.popular}
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
+
+              <div className="flex items-center gap-2 sm:hidden">
+                <div className="rounded-full border border-border/60 bg-background/55 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur-xl">
+                  {items.length} {messages.common.total}
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    type="button"
+                    onClick={() => setMobileTwoColumn((v) => !v)}
+                    aria-label={
+                      mobileTwoColumn ? messages.discover.switchToSingleColumn : messages.discover.switchToTwoColumns
+                    }
+                  >
+                    {mobileTwoColumn ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    type="button"
+                    onClick={() =>
+                      setMobileFiltersOpen((current) => {
+                        const next = !current;
+                        if (next) announceOverlayOpen("discover-mobile-filters");
+                        return next;
+                      })
+                    }
+                    aria-expanded={mobileFiltersOpen}
+                    aria-label={mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
+                    className={mobileFiltersOpen ? "border-primary/30 bg-primary/10 text-foreground" : ""}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div key={resultsKey} className={`content-stream mt-7 grid gap-5 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
+        <div key={resultsKey} className={`content-stream grid gap-3 sm:gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-2"} ${discoverGridClass}`}>
         {query.isLoading ? (
           <>
             <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
@@ -433,7 +418,7 @@ export function PetFeed() {
           </>
         ) : items.length === 0 ? (
           <Reveal>
-            <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center md:col-span-2 xl:col-span-3">
+            <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center sm:col-span-2 lg:col-span-3 2xl:col-span-4">
               <div className="absolute left-8 top-8 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
               <div className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-pink-400/10 blur-2xl" />
               <div className="relative mx-auto flex h-18 w-18 items-center justify-center rounded-full border border-border/60 bg-background/75">
@@ -466,10 +451,16 @@ export function PetFeed() {
         ) : (
           items.map((pet, index) => (
             <Reveal key={pet.id} delay={Math.min(index * 70, 280)}>
-              <PetCard pet={pet} layout={isMobile && !mobileTwoColumn ? "list" : "grid"} className="h-full" />
+              <PetCard
+                pet={pet}
+                layout={isMobile && !mobileTwoColumn ? "list" : "grid"}
+                density={isMobile && mobileTwoColumn ? "compact" : "standard"}
+                className="h-full"
+              />
             </Reveal>
           ))
         )}
+        </div>
       </div>
 
       <div ref={sentinelRef} className="h-1" />
@@ -553,7 +544,7 @@ export function PetFeed() {
         : null}
 
       {query.isFetchingNextPage ? (
-        <div className={`mt-4 grid gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
+        <div className={`mt-4 grid gap-3 sm:gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-2"} ${discoverGridClass}`}>
           <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
           <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
         </div>
