@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Camera, Sparkles } from "lucide-react";
+import { Camera, ChevronLeft, Sparkles } from "lucide-react";
 
-import { useI18n } from "@/app/providers";
+import { startViewTransition, useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,6 +80,23 @@ export function ProfileClient({
   const qc = useQueryClient();
   const { messages } = useI18n();
   const isOwner = !initialUser || viewerId === userId;
+  const safeBack = React.useCallback(() => {
+    try {
+      if (window.history.length > 1) {
+        void startViewTransition(() => {
+          router.back();
+        });
+      } else {
+        void startViewTransition(() => {
+          router.push("/discover");
+        });
+      }
+    } catch {
+      void startViewTransition(() => {
+        router.push("/discover");
+      });
+    }
+  }, [router]);
 
   const me = useQuery({
     queryKey: ["me"],
@@ -154,6 +171,23 @@ export function ProfileClient({
 
   return (
     <div className="space-y-6">
+      {!isOwner ? (
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 rounded-full"
+            onClick={safeBack}
+            aria-label="返回"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0 text-sm text-muted-foreground truncate">
+            {messages.header.profile}
+          </div>
+        </div>
+      ) : null}
       <Reveal>
         <Card className="rounded-[34px] p-5 sm:p-7">
           <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">

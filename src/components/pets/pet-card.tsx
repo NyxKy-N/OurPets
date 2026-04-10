@@ -185,8 +185,8 @@ export function PetCard({
                 <button
                   type="button"
                   className="soft-control absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-left text-xs text-white/92 backdrop-blur-xl hover:bg-black/30 active:scale-[0.98]"
+                  onClickCapture={stopLinkNavigation}
                   onClick={openOwner}
-                  onPointerDown={stopLinkNavigation}
                   aria-label={pet.owner.name ?? messages.common.unknown}
                 >
                   <Avatar className="h-6 w-6 shrink-0 border border-white/20 bg-white/15">
