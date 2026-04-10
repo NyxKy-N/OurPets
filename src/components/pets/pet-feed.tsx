@@ -50,7 +50,7 @@ export function PetFeed() {
   const [density, setDensity] = React.useState<"standard" | "compact">("standard");
   const [isMobile, setIsMobile] = React.useState(false);
   const [reducedMotion, setReducedMotion] = React.useState(false);
-  const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
+  const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(false);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
   const [fabY, setFabY] = React.useState<number | null>(null);
   const [fabXOffset, setFabXOffset] = React.useState(0);
@@ -163,6 +163,26 @@ export function PetFeed() {
       setReducedMotion(document.documentElement.classList.contains("reduced-effects"));
     }
   }, []);
+
+  React.useEffect(() => {
+    if (!floatingActionsOpen) return;
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+      const fab = fabMeasureRef.current;
+      if (fab && fab.contains(target)) return;
+      setFloatingActionsOpen(false);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFloatingActionsOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [floatingActionsOpen]);
 
   React.useEffect(() => {
     try {
@@ -733,14 +753,6 @@ export function PetFeed() {
         <div className="mt-6 text-center text-xs text-muted-foreground">
           {messages.feed.end}
         </div>
-      ) : null}
-
-      {floatingActionsOpen ? (
-        <div
-          className="fixed inset-0 z-30 sm:hidden"
-          onClick={() => setFloatingActionsOpen(false)}
-          aria-hidden="true"
-        />
       ) : null}
 
       <div
