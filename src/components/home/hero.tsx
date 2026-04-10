@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUp, ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
 import { useI18n } from "@/app/providers";
@@ -103,12 +103,12 @@ export function Hero({ messages }: { messages: Messages }) {
           </div>
 
           <div className="relative lg:col-span-7">
-            <div className="mt-4 flex flex-col items-center sm:mt-5 lg:mt-7">
+            <div className="mt-1 flex flex-col items-center sm:mt-5 lg:mt-7">
               <motion.h1
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                className="mb-4 text-center text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.06em] text-foreground/92 sm:mb-5 sm:text-[3.6rem] lg:text-[4.6rem] xl:text-[5.2rem]"
+                className="mb-3 text-center text-[2.8rem] font-semibold leading-[0.92] tracking-[-0.06em] text-foreground/92 sm:mb-5 sm:text-[3.6rem] lg:text-[4.6rem] xl:text-[5.2rem]"
               >
                 <span className="gradient-text">OurPets</span>
               </motion.h1>
@@ -203,14 +203,6 @@ export function Hero({ messages }: { messages: Messages }) {
           </div>
         </div>
 
-        <button
-          type="button"
-          className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="返回顶部"
-        >
-          <ArrowUp className="h-5 w-5" />
-        </button>
       </section>
     </Reveal>
   );

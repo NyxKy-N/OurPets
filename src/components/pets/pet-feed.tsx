@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { Search, Sparkles } from "lucide-react";
+import { ArrowUp, ChevronDown, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -38,6 +38,7 @@ export function PetFeed() {
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
   const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
 
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
@@ -104,19 +105,35 @@ export function PetFeed() {
                   <p className="text-sm text-muted-foreground">
                     {items.length} {messages.common.total}
                   </p>
-                  <Button
-                    variant="outline"
-                    onClick={() => query.refetch()}
-                    disabled={query.isFetching}
-                    className="w-full sm:w-auto"
-                  >
-                    {messages.feed.refresh}
-                  </Button>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => query.refetch()}
+                      disabled={query.isFetching}
+                      className="w-full sm:w-auto"
+                    >
+                      {messages.feed.refresh}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      type="button"
+                      onClick={() => setMobileFiltersOpen((v) => !v)}
+                      className="w-full sm:hidden"
+                      aria-expanded={mobileFiltersOpen}
+                    >
+                      <span className="mr-2">
+                        {mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
+                      </span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${mobileFiltersOpen ? "rotate-180" : ""}`}
+                      />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className={`${mobileFiltersOpen ? "grid" : "hidden"} gap-3 sm:grid sm:grid-cols-2`}>
               <div className="glass-panel rounded-[28px] p-3">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.categoryLabel}
@@ -233,6 +250,15 @@ export function PetFeed() {
           {messages.feed.end}
         </div>
       ) : null}
+
+      <button
+        type="button"
+        className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        aria-label="返回顶部"
+      >
+        <ArrowUp className="h-5 w-5" />
+      </button>
     </section>
   );
 }
