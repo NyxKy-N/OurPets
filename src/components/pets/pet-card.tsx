@@ -172,18 +172,6 @@ export function PetCard({
         href={petHref}
         prefetch={false}
         className="block"
-        onClick={(e) => {
-          if (e.defaultPrevented) return;
-          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-          if (e.button !== 0) return;
-          if (document.documentElement.classList.contains("reduced-effects")) return;
-          if (typeof document === "undefined") return;
-          const doc = document as unknown as { startViewTransition?: (cb: () => void) => void };
-          const svt = doc.startViewTransition;
-          if (!svt) return;
-          e.preventDefault();
-          svt(() => router.push(petHref));
-        }}
       >
         <div
           className={cn(

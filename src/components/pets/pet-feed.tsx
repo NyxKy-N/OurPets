@@ -473,15 +473,6 @@ export function PetFeed() {
                     >
                       {messages.feed.other}
                     </Button>
-                    <div className="h-6 w-px shrink-0 bg-border/60" />
-                    <Button
-                      variant={density === "compact" ? "default" : "outline"}
-                      size="sm"
-                      className="shrink-0 rounded-full whitespace-nowrap"
-                      onClick={() => setDensity((v) => (v === "compact" ? "standard" : "compact"))}
-                    >
-                      {density === "compact" ? messages.discover.densityCompact : messages.discover.densityStandard}
-                    </Button>
                   </div>
                 ) : null}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
