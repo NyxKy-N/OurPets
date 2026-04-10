@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowUp, ChevronLeft, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { ArrowLeftRight, ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -43,6 +43,7 @@ export function PetFeed() {
   const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
+  const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -53,6 +54,21 @@ export function PetFeed() {
       mq.removeEventListener("change", onChange);
     };
   }, []);
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("discover:fabSide");
+      if (stored === "left" || stored === "right") setFabSide(stored);
+    } catch {
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("discover:fabSide", fabSide);
+    } catch {
+    }
+  }, [fabSide]);
 
   React.useEffect(() => {
     try {
@@ -313,7 +329,7 @@ export function PetFeed() {
         </div>
       ) : null}
 
-      <div className="fixed bottom-6 right-6 z-40 sm:hidden">
+      <div className={`fixed bottom-6 ${fabSide === "right" ? "right-6" : "left-6"} z-40 sm:hidden`}>
         <div
           className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
             floatingActionsOpen
@@ -340,6 +356,15 @@ export function PetFeed() {
           <button
             type="button"
             className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            onClick={() => setFabSide((s) => (s === "right" ? "left" : "right"))}
+            aria-label="切换位置"
+            title="切换位置"
+          >
+            <ArrowLeftRight className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
             onClick={() => setFloatingActionsOpen(false)}
             aria-label={messages.discover.hideFilters}
           >
@@ -349,13 +374,13 @@ export function PetFeed() {
 
         <button
           type="button"
-          className={`discover-fab motion-pop soft-control absolute bottom-0 right-0 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
+          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
             floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
           }`}
           onClick={() => setFloatingActionsOpen(true)}
           aria-label={messages.discover.showFilters}
         >
-          <ChevronLeft className="h-5 w-5" />
+          {fabSide === "right" ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
         </button>
       </div>
     </section>
