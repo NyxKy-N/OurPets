@@ -455,23 +455,6 @@ export function PetFeed() {
                     </Button>
                     <div className="h-6 w-px shrink-0 bg-border/60" />
                     <Button
-                      variant={sort === "LATEST" ? "default" : "outline"}
-                      size="sm"
-                      className="shrink-0 rounded-full whitespace-nowrap"
-                      onClick={() => setSort("LATEST")}
-                    >
-                      {messages.discover.latest}
-                    </Button>
-                    <Button
-                      variant={sort === "POPULAR" ? "default" : "outline"}
-                      size="sm"
-                      className="shrink-0 rounded-full whitespace-nowrap"
-                      onClick={() => setSort("POPULAR")}
-                    >
-                      {messages.discover.popular}
-                    </Button>
-                    <div className="h-6 w-px shrink-0 bg-border/60" />
-                    <Button
                       variant={density === "compact" ? "default" : "outline"}
                       size="sm"
                       className="shrink-0 rounded-full whitespace-nowrap"
@@ -600,7 +583,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`motion-collapse grid gap-3 overflow-hidden transform-gpu sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
+              className={`motion-collapse grid gap-3 overflow-hidden transform-gpu sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
@@ -750,6 +733,14 @@ export function PetFeed() {
         <div className="mt-6 text-center text-xs text-muted-foreground">
           {messages.feed.end}
         </div>
+      ) : null}
+
+      {floatingActionsOpen ? (
+        <div
+          className="fixed inset-0 z-30 sm:hidden"
+          onClick={() => setFloatingActionsOpen(false)}
+          aria-hidden="true"
+        />
       ) : null}
 
       <div
