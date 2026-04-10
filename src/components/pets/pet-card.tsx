@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -64,6 +65,18 @@ export function PetCard({
   );
   const ownerHref = session?.user?.id === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
   const reportHref = `/feedback?report=pet&id=${encodeURIComponent(pet.id)}&name=${encodeURIComponent(pet.name)}`;
+  const stopLinkNavigation = React.useCallback((e: React.MouseEvent | React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+  const openOwner = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push(ownerHref);
+    },
+    [ownerHref, router]
+  );
   const deletePet = useMutation({
     mutationFn: () => apiFetch<{ id: string }>(`/api/pets/${pet.id}`, { method: "DELETE" }),
     onSuccess: async () => {
@@ -169,7 +182,13 @@ export function PetCard({
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/22 to-transparent opacity-70" />
             {isGrid ? (
               <>
-                <div className="absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-xs text-white/92 backdrop-blur-xl">
+                <button
+                  type="button"
+                  className="soft-control absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-left text-xs text-white/92 backdrop-blur-xl hover:bg-black/30 active:scale-[0.98]"
+                  onClick={openOwner}
+                  onPointerDown={stopLinkNavigation}
+                  aria-label={pet.owner.name ?? messages.common.unknown}
+                >
                   <Avatar className="h-6 w-6 shrink-0 border border-white/20 bg-white/15">
                     <AvatarImage src={pet.owner.image ?? undefined} />
                     <AvatarFallback>
@@ -177,8 +196,13 @@ export function PetCard({
                     </AvatarFallback>
                   </Avatar>
                   <span className="truncate font-medium">{pet.owner.name ?? messages.common.unknown}</span>
-                </div>
-                <div className="absolute inset-x-3 bottom-3 flex items-end justify-between gap-3">
+                </button>
+                <div
+                  className={cn(
+                    "absolute inset-x-3 bottom-3",
+                    isCompact ? "flex flex-col gap-2" : "flex items-end justify-between gap-3"
+                  )}
+                >
                   <div className="min-w-0">
                     <div
                       className={cn(
@@ -195,7 +219,7 @@ export function PetCard({
                       </div>
                     ) : null}
                   </div>
-                  <div className="flex shrink-0 items-center gap-1.5">
+                  <div className={cn("flex shrink-0 items-center gap-1.5", isCompact ? "self-start" : "")}>
                     <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
                       {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
                     </div>

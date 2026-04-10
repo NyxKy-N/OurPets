@@ -12,6 +12,7 @@ import { startViewTransition, useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { formatPetAge, getPetGenderLabel, getPetTypeLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Reveal } from "@/components/ui/reveal";
 import { Separator } from "@/components/ui/separator";
@@ -186,11 +187,19 @@ export function PetDetail({
                   </span>
                   <Link
                     href={ownerHref}
-                    className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl transition-colors hover:border-primary/50 hover:text-foreground"
+                    className="inline-flex max-w-full items-center gap-2 rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl transition-colors hover:border-primary/50 hover:text-foreground"
                   >
-                    {messages.petCard.owner}:{" "}
-                    <span className="font-medium text-foreground">
-                      {pet.owner.name ?? messages.common.unknown}
+                    <Avatar className="h-7 w-7 shrink-0 border border-border/60 bg-background/60">
+                      <AvatarImage src={pet.owner.image ?? undefined} />
+                      <AvatarFallback>
+                        {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="min-w-0 truncate">
+                      {messages.petCard.owner}:{" "}
+                      <span className="font-medium text-foreground">
+                        {pet.owner.name ?? messages.common.unknown}
+                      </span>
                     </span>
                   </Link>
                   {detailBadges.map((item) => (
