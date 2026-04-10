@@ -100,15 +100,6 @@
     scrollbar-gutter: stable both-edges;
   }
 
-  html.fab-dragging {
-    overscroll-behavior: none;
-  }
-
-  html.fab-dragging body {
-    overflow: hidden;
-    touch-action: none;
-  }
-
   body {
     @apply bg-background text-foreground;
     background-image:
@@ -229,11 +220,6 @@
       opacity 320ms var(--ease-soft),
       transform 320ms var(--ease-soft);
     backdrop-filter: none;
-  }
-
-  .cv-auto {
-    content-visibility: auto;
-    contain-intrinsic-size: 360px 460px;
   }
 
   .reduced-effects .soft-control {

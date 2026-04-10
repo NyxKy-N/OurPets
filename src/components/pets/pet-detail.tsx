@@ -175,7 +175,6 @@ export function PetDetail({
                   </span>
                   <Link
                     href={ownerHref}
-                    prefetch={false}
                     className="rounded-full border border-border/60 bg-background/70 px-3 py-1.5 backdrop-blur-xl transition-colors hover:border-primary/50 hover:text-foreground"
                   >
                     {messages.petCard.owner}:{" "}
@@ -206,7 +205,7 @@ export function PetDetail({
                 {canManagePet ? (
                   <>
                     <Button asChild variant="outline" className="w-full gap-2 sm:w-auto">
-                      <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
+                      <Link href={`/pet/${pet.id}/edit`}>
                         <Pencil className="h-4 w-4" />
                         {messages.petDetail.edit}
                       </Link>
@@ -224,7 +223,7 @@ export function PetDetail({
                   </>
                 ) : (
                   <Button asChild variant="outline" className="w-full gap-2 sm:w-auto">
-                    <Link href={reportHref} prefetch={false}>
+                    <Link href={reportHref}>
                       <Flag className="h-4 w-4" />
                       举报
                     </Link>

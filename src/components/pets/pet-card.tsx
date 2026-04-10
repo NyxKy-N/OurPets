@@ -75,7 +75,7 @@ export function PetCard({
     <Card className={cn("group overflow-hidden rounded-[30px] p-1", className)}>
       <div className={cn("flex items-center justify-between gap-2 pb-0 sm:px-4", isCompact ? "px-2.5 pt-2.5" : "px-3 pt-3")}>
         <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
-          <Link href={ownerHref} prefetch={false} className="inline-flex min-w-0 items-center gap-2">
+          <Link href={ownerHref} className="inline-flex min-w-0 items-center gap-2">
             <Avatar className="h-7 w-7 shrink-0 border border-border/70 bg-background/55">
               <AvatarImage src={pet.owner.image ?? undefined} />
               <AvatarFallback>
@@ -99,7 +99,7 @@ export function PetCard({
               )}
               aria-label={messages.petDetail.edit}
             >
-              <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
+              <Link href={`/pet/${pet.id}/edit`}>
                 <Pencil className="h-4 w-4" />
               </Link>
             </Button>
@@ -125,7 +125,7 @@ export function PetCard({
               size="sm"
               className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}
             >
-              <Link href={`/pet/${pet.id}/edit`} prefetch={false}>
+              <Link href={`/pet/${pet.id}/edit`}>
                 <Pencil className="mr-1 h-4 w-4" />
                 {messages.petDetail.edit}
               </Link>
@@ -155,12 +155,12 @@ export function PetCard({
               )}
               aria-label="举报"
             >
-              <Link href={reportHref} prefetch={false}>
+              <Link href={reportHref}>
                 <Flag className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}>
-              <Link href={reportHref} prefetch={false}>
+              <Link href={reportHref}>
                 <Flag className="mr-1 h-4 w-4" />
                 举报
               </Link>

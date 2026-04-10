@@ -56,6 +56,17 @@ export function PetFeed() {
   const pendingXRef = React.useRef<number | null>(null);
   const pendingYRef = React.useRef<number | null>(null);
   const rafIdRef = React.useRef<number | null>(null);
+  const scrollLockRef = React.useRef<{
+    scrollY: number;
+    htmlOverscrollBehavior: string;
+    bodyOverflow: string;
+    bodyPosition: string;
+    bodyTop: string;
+    bodyLeft: string;
+    bodyRight: string;
+    bodyWidth: string;
+    bodyTouchAction: string;
+  } | null>(null);
 
   const clampFabXOffset = React.useCallback((x: number) => {
     const pad = 24;
@@ -71,11 +82,54 @@ export function PetFeed() {
     return Math.min(Math.max(y, min), max);
   }, []);
 
+  const lockScroll = React.useCallback(() => {
+    if (scrollLockRef.current) return;
+    const scrollY = window.scrollY;
+    const htmlStyle = document.documentElement.style;
+    const bodyStyle = document.body.style;
+    scrollLockRef.current = {
+      scrollY,
+      htmlOverscrollBehavior: htmlStyle.overscrollBehavior,
+      bodyOverflow: bodyStyle.overflow,
+      bodyPosition: bodyStyle.position,
+      bodyTop: bodyStyle.top,
+      bodyLeft: bodyStyle.left,
+      bodyRight: bodyStyle.right,
+      bodyWidth: bodyStyle.width,
+      bodyTouchAction: bodyStyle.touchAction,
+    };
+    htmlStyle.overscrollBehavior = "none";
+    bodyStyle.overflow = "hidden";
+    bodyStyle.position = "fixed";
+    bodyStyle.top = `-${scrollY}px`;
+    bodyStyle.left = "0";
+    bodyStyle.right = "0";
+    bodyStyle.width = "100%";
+    bodyStyle.touchAction = "none";
+  }, []);
+
+  const unlockScroll = React.useCallback(() => {
+    const snapshot = scrollLockRef.current;
+    if (!snapshot) return;
+    scrollLockRef.current = null;
+    const htmlStyle = document.documentElement.style;
+    const bodyStyle = document.body.style;
+    htmlStyle.overscrollBehavior = snapshot.htmlOverscrollBehavior;
+    bodyStyle.overflow = snapshot.bodyOverflow;
+    bodyStyle.position = snapshot.bodyPosition;
+    bodyStyle.top = snapshot.bodyTop;
+    bodyStyle.left = snapshot.bodyLeft;
+    bodyStyle.right = snapshot.bodyRight;
+    bodyStyle.width = snapshot.bodyWidth;
+    bodyStyle.touchAction = snapshot.bodyTouchAction;
+    window.scrollTo(0, snapshot.scrollY);
+  }, []);
+
   React.useEffect(() => {
     return () => {
-      document.documentElement.classList.remove("fab-dragging");
+      unlockScroll();
     };
-  }, []);
+  }, [unlockScroll]);
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -410,7 +464,7 @@ export function PetFeed() {
           if (!draggingRef.current) {
             draggingRef.current = true;
             setFabIsDragging(true);
-            document.documentElement.classList.add("fab-dragging");
+            lockScroll();
             try {
               (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             } catch {
@@ -463,7 +517,7 @@ export function PetFeed() {
           }
           draggingRef.current = false;
           setFabIsDragging(false);
-          document.documentElement.classList.remove("fab-dragging");
+          unlockScroll();
         }}
         onPointerCancel={(e) => {
           if (pointerIdRef.current !== e.pointerId) return;
@@ -476,7 +530,7 @@ export function PetFeed() {
           pendingYRef.current = null;
           draggingRef.current = false;
           setFabIsDragging(false);
-          document.documentElement.classList.remove("fab-dragging");
+          unlockScroll();
         }}
       >
         <div
@@ -496,7 +550,6 @@ export function PetFeed() {
           </button>
           <Link
             href="/pets/new"
-            prefetch={false}
             className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             aria-label={messages.header.addPet}
           >

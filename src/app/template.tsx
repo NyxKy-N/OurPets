@@ -4,24 +4,26 @@ import * as React from "react";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 
+import { useReducedEffects } from "@/app/providers";
+
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [reduced, setReduced] = React.useState(false);
+  const { reducedEffects } = useReducedEffects();
+  const [supportsViewTransition, setSupportsViewTransition] = React.useState(false);
 
   React.useEffect(() => {
     try {
       const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-      const handler = () =>
-        setReduced(m.matches || document.documentElement.classList.contains("reduced-effects"));
+      const handler = () => setSupportsViewTransition("startViewTransition" in document && !m.matches);
       handler();
       m.addEventListener("change", handler);
       return () => m.removeEventListener("change", handler);
     } catch {
-      setReduced(document.documentElement.classList.contains("reduced-effects"));
+      setSupportsViewTransition("startViewTransition" in document);
     }
   }, []);
 
-  if (reduced) return <div className="route-transition">{children}</div>;
+  if (reducedEffects || supportsViewTransition) return <div className="route-transition">{children}</div>;
 
   return (
     <motion.div

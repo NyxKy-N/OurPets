@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { SessionProvider } from "next-auth/react";
 import type { Session } from "next-auth";
@@ -10,7 +11,6 @@ import {
   QueryClientProvider,
   defaultShouldDehydrateQuery,
 } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "sonner";
 
 import {
@@ -19,6 +19,11 @@ import {
   type Locale,
   type Messages,
 } from "@/lib/i18n";
+
+const ReactQueryDevtools = dynamic(
+  () => import("@tanstack/react-query-devtools").then((mod) => mod.ReactQueryDevtools),
+  { ssr: false }
+);
 
 function makeQueryClient() {
   return new QueryClient({
@@ -58,6 +63,14 @@ type LocaleContextValue = {
 };
 
 const LocaleContext = React.createContext<LocaleContextValue | null>(null);
+
+type ReducedEffectsContextValue = {
+  reducedEffects: boolean;
+  setReducedEffects: (next: boolean) => void;
+  toggleReducedEffects: () => void;
+};
+
+const ReducedEffectsContext = React.createContext<ReducedEffectsContextValue | null>(null);
 
 function LocaleProvider({
   children,
@@ -107,6 +120,14 @@ export function useI18n() {
   return context;
 }
 
+export function useReducedEffects() {
+  const context = React.useContext(ReducedEffectsContext);
+  if (!context) {
+    throw new Error("useReducedEffects must be used within Providers");
+  }
+  return context;
+}
+
 export function Providers({
   children,
   session,
@@ -118,17 +139,38 @@ export function Providers({
   initialLocale: Locale;
   initialMessages: Messages;
 }) {
+  const router = useRouter();
   const queryClient = getQueryClient();
+  const [reducedEffects, setReducedEffectsState] = React.useState(false);
+
+  const applyReducedEffects = React.useCallback((next: boolean, persist: boolean) => {
+    setReducedEffectsState(next);
+    document.documentElement.classList.toggle("reduced-effects", next);
+    if (!persist) return;
+    try {
+      localStorage.setItem("ui:reducedEffects", next ? "1" : "0");
+    } catch {
+    }
+  }, []);
+
+  const setReducedEffects = React.useCallback(
+    (next: boolean) => applyReducedEffects(next, true),
+    [applyReducedEffects]
+  );
+
+  const toggleReducedEffects = React.useCallback(() => {
+    setReducedEffects(!document.documentElement.classList.contains("reduced-effects"));
+  }, [setReducedEffects]);
 
   React.useEffect(() => {
     try {
       const stored = localStorage.getItem("ui:reducedEffects");
       if (stored === "1") {
-        document.documentElement.classList.add("reduced-effects");
+        applyReducedEffects(true, false);
         return;
       }
       if (stored === "0") {
-        document.documentElement.classList.remove("reduced-effects");
+        applyReducedEffects(false, false);
         return;
       }
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -143,19 +185,62 @@ export function Providers({
       const effectiveType = conn?.effectiveType;
       const lowNetwork = saveData || effectiveType === "2g" || effectiveType === "slow-2g";
       const reduced = prefersReducedMotion || lowMemory || lowCpu || lowNetwork;
-      document.documentElement.classList.toggle("reduced-effects", Boolean(reduced));
+      applyReducedEffects(Boolean(reduced), false);
     } catch {
     }
-  }, []);
+  }, [applyReducedEffects]);
+
+  React.useEffect(() => {
+    if (reducedEffects) return;
+    if (typeof document === "undefined") return;
+    if (!("startViewTransition" in document)) return;
+
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const target = e.target as Element | null;
+      if (!target) return;
+      const anchor = target.closest("a") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== "_self") return;
+      if (anchor.hasAttribute("download")) return;
+
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+      if (href.startsWith("#")) return;
+      if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
+
+      let url: URL;
+      try {
+        url = new URL(anchor.href);
+      } catch {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+
+      e.preventDefault();
+      const nextHref = `${url.pathname}${url.search}${url.hash}`;
+      (document as unknown as { startViewTransition: (cb: () => void) => unknown }).startViewTransition(
+        () => router.push(nextHref)
+      );
+    };
+
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [reducedEffects, router]);
 
   return (
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
         <LocaleProvider initialLocale={initialLocale} initialMessages={initialMessages}>
-          <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-            {children}
-            <Toaster richColors closeButton />
-          </ThemeProvider>
+          <ReducedEffectsContext.Provider value={{ reducedEffects, setReducedEffects, toggleReducedEffects }}>
+            <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+              {children}
+              <Toaster richColors closeButton />
+            </ThemeProvider>
+          </ReducedEffectsContext.Provider>
         </LocaleProvider>
         {process.env.NODE_ENV === "development" ? (
           <ReactQueryDevtools initialIsOpen={false} />

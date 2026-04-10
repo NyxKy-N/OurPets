@@ -92,7 +92,7 @@ export function Hero({ messages }: { messages: Messages }) {
 
             <div className="mt-9 hidden flex-col gap-3 sm:flex sm:flex-row">
               <Button asChild size="lg">
-                <Link href="/discover" prefetch={false}>
+                <Link href="/discover">
                   {messages.header.discover}
                 </Link>
               </Button>
@@ -175,7 +175,7 @@ export function Hero({ messages }: { messages: Messages }) {
                             <ArrowUpRight className="h-4 w-4" />
                           </Button>
                           <Button asChild variant="outline" size="sm">
-                            <Link href="/discover" prefetch={false}>
+                            <Link href="/discover">
                               {messages.home.ctaSecondary}
                             </Link>
                           </Button>
@@ -190,7 +190,7 @@ export function Hero({ messages }: { messages: Messages }) {
                 <p className="text-base leading-8 text-muted-foreground">{messages.home.description}</p>
                 <div className="mt-4 flex flex-col gap-3">
                   <Button asChild size="lg">
-                    <Link href="/discover" prefetch={false}>
+                    <Link href="/discover">
                       {messages.header.discover}
                     </Link>
                   </Button>

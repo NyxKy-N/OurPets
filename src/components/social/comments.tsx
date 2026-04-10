@@ -265,7 +265,7 @@ export function Comments({
         className={isReply ? "rounded-[20px] border border-border/60 bg-background/45 p-4" : "glass-panel rounded-[24px] p-4 sm:p-5"}
       >
         <div className="flex gap-3">
-          <Link href={profileHref(comment.user.id)} prefetch={false} className="shrink-0">
+          <Link href={profileHref(comment.user.id)} className="shrink-0">
             <Avatar className="h-9 w-9 transition-transform duration-300 ease-out hover:scale-[1.03]">
               <AvatarImage src={comment.user.image ?? undefined} />
               <AvatarFallback>{comment.user.name?.[0]?.toUpperCase() ?? "U"}</AvatarFallback>
@@ -276,7 +276,6 @@ export function Comments({
               <div className="min-w-0">
                 <Link
                   href={profileHref(comment.user.id)}
-                  prefetch={false}
                   className="truncate text-sm font-medium transition-colors hover:text-foreground"
                 >
                   {comment.user.name ?? messages.common.user}

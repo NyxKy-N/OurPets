@@ -280,7 +280,7 @@ export function ProfileClient({
               </div>
               {isOwner ? (
                 <Button asChild variant="outline">
-                  <Link href="/pets/new" prefetch={false}>
+                  <Link href="/pets/new">
                     {messages.header.addPet}
                   </Link>
                 </Button>

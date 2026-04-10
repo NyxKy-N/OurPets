@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sparkles, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { useI18n } from "@/app/providers";
+import { useI18n, useReducedEffects } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -43,10 +43,10 @@ export function Header() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const { locale, messages, setLocale } = useI18n();
+  const { reducedEffects, toggleReducedEffects } = useReducedEffects();
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-  const [reducedEffects, setReducedEffects] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -125,14 +125,6 @@ export function Header() {
     setMobileNavOpen(false);
   }, [pathname]);
 
-  React.useEffect(() => {
-    try {
-      setReducedEffects(document.documentElement.classList.contains("reduced-effects"));
-    } catch {
-      setReducedEffects(false);
-    }
-  }, []);
-
   const primaryLinks = [
     { href: "/", label: messages.header.home, active: pathname === "/" },
     {
@@ -163,7 +155,6 @@ export function Header() {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
-            prefetch={false}
             className="gradient-text shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-[transform,opacity] duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80 sm:text-xl"
           >
             OurPets
@@ -174,7 +165,6 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
                 aria-current={item.active ? "page" : undefined}
                 className={`inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] ${
                   item.active
@@ -192,7 +182,6 @@ export function Header() {
           <div className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 sm:block">
             <Link
               href="/pets/new"
-              prefetch={false}
               aria-label={messages.header.addPet}
               className="glass-button inline-flex h-11 w-11 items-center justify-center rounded-full text-foreground/85"
             >
@@ -217,15 +206,7 @@ export function Header() {
             size="icon"
             className={cn("sm:hidden", reducedEffects ? "border-primary/30 bg-primary/10 text-foreground" : "")}
             aria-label="移除动效与模糊"
-            onClick={() => {
-              const next = !document.documentElement.classList.contains("reduced-effects");
-              document.documentElement.classList.toggle("reduced-effects", next);
-              try {
-                localStorage.setItem("ui:reducedEffects", next ? "1" : "0");
-              } catch {
-              }
-              setReducedEffects(next);
-            }}
+            onClick={toggleReducedEffects}
           >
             <Sparkles className="h-5 w-5" />
           </Button>
@@ -343,7 +324,6 @@ export function Header() {
                         <Link
                           key={item.id}
                           href={`/pet/${item.pet.id}`}
-                          prefetch={false}
                           className="flex items-start gap-3 rounded-[20px] border border-transparent bg-background/45 px-3 py-3 transition-[transform,background-color,border-color] duration-300 hover:-translate-y-0.5 hover:border-border/70 hover:bg-background/70"
                         >
                           <Avatar className="mt-0.5 h-9 w-9">
@@ -429,7 +409,7 @@ export function Header() {
                     <DropdownMenuSeparator />
                   </div>
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" prefetch={false}>
+                    <Link href="/profile">
                       {messages.header.profile}
                     </Link>
                   </DropdownMenuItem>
@@ -465,7 +445,6 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              prefetch={false}
               aria-current={item.active ? "page" : undefined}
               onClick={() => setMobileNavOpen(false)}
               className={`inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] sm:text-left ${
