@@ -44,6 +44,10 @@ export function PetFeed() {
   const [isMobile, setIsMobile] = React.useState(false);
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
+  const [fabY, setFabY] = React.useState<number | null>(null);
+  const draggingRef = React.useRef(false);
+  const startYRef = React.useRef(0);
+  const startFabYRef = React.useRef(0);
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -59,6 +63,9 @@ export function PetFeed() {
     try {
       const stored = localStorage.getItem("discover:fabSide");
       if (stored === "left" || stored === "right") setFabSide(stored);
+      const y = localStorage.getItem("discover:fabY");
+      if (y) setFabY(Number(y));
+      if (!y) setFabY(Math.max(window.innerHeight - 108, 84));
     } catch {
     }
   }, []);
@@ -69,6 +76,19 @@ export function PetFeed() {
     } catch {
     }
   }, [fabSide]);
+
+  React.useEffect(() => {
+    try {
+      if (fabY != null) localStorage.setItem("discover:fabY", String(fabY));
+    } catch {
+    }
+  }, [fabY]);
+
+  function clampFabY(y: number) {
+    const min = 84;
+    const max = Math.max(window.innerHeight - 120, min + 1);
+    return Math.min(Math.max(y, min), max);
+  }
 
   React.useEffect(() => {
     try {
@@ -329,7 +349,34 @@ export function PetFeed() {
         </div>
       ) : null}
 
-      <div className={`fixed bottom-6 ${fabSide === "right" ? "right-6" : "left-6"} z-40 sm:hidden`}>
+      <div
+        className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 sm:hidden`}
+        style={fabY != null ? { top: fabY } : { bottom: "1.5rem" }}
+        onTouchStart={(e) => {
+          if (!isMobile) return;
+          const t = e.touches[0];
+          draggingRef.current = true;
+          startYRef.current = t.clientY;
+          startFabYRef.current = fabY ?? Math.max(window.innerHeight - 108, 84);
+        }}
+        onTouchMove={(e) => {
+          if (!isMobile || !draggingRef.current) return;
+          const t = e.touches[0];
+          const delta = t.clientY - startYRef.current;
+          const next = clampFabY(startFabYRef.current + delta);
+          setFabY(next);
+          try {
+            e.preventDefault();
+          } catch {
+          }
+        }}
+        onTouchEnd={() => {
+          draggingRef.current = false;
+        }}
+        onTouchCancel={() => {
+          draggingRef.current = false;
+        }}
+      >
         <div
           className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
             floatingActionsOpen
