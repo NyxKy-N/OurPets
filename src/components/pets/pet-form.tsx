@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarDays, ChevronDown, ShieldCheck, X } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ShieldCheck, X } from "lucide-react";
 
 import { startViewTransition, useI18n } from "@/app/providers";
 import { createPetSchema, petFormSchema } from "@/lib/validators/pets";
@@ -16,13 +16,6 @@ import { apiFetch } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -143,36 +136,79 @@ function FormDropdown({
   contentClassName?: string;
 }) {
   const selected = options.find((option) => option.value === value) ?? options[0];
+  const [open, setOpen] = React.useState(false);
+  const rootRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (rootRef.current?.contains(target)) return;
+      setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   return (
-    <DropdownMenu modal>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          "glass-panel-strong inline-flex h-11 w-full items-center justify-between rounded-2xl px-4 text-left text-sm text-foreground transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:var(--ease-bounce)] hover:border-primary/30 hover:bg-background/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2",
+          open ? "border-primary/35 bg-background/80 shadow-[0_16px_36px_hsl(var(--primary)/0.12)]" : "",
+          className
+        )}
+      >
+        <span className="truncate">{selected?.label ?? ""}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300", open ? "rotate-180" : "")} />
+      </button>
+      {open ? (
+        <div
+          role="listbox"
           className={cn(
-            "glass-panel-strong inline-flex h-11 w-full items-center justify-between rounded-2xl px-4 text-left text-sm text-foreground transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:var(--ease-bounce)] hover:border-primary/30 hover:bg-background/78 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2",
-            className
+            "glass-panel-strong absolute left-0 right-0 top-[calc(100%+0.5rem)] z-50 overflow-hidden rounded-[24px] p-1.5",
+            contentClassName
           )}
         >
-          <span className="truncate">{selected?.label ?? ""}</span>
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        sideOffset={8}
-        onCloseAutoFocus={(event) => event.preventDefault()}
-        className={cn("w-[var(--radix-dropdown-menu-trigger-width)] p-1.5", contentClassName)}
-      >
-        <DropdownMenuRadioGroup value={value} onValueChange={onValueChange}>
-          {options.map((option) => (
-            <DropdownMenuRadioItem key={option.value} value={option.value}>
-              {option.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <div className="space-y-1">
+            {options.map((option) => {
+              const isSelected = option.value === value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => {
+                    onValueChange(option.value);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "soft-control relative flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm text-foreground/85 backdrop-blur-xl transition-[transform,background-color,color,box-shadow] duration-300 [transition-timing-function:var(--ease-bounce)] hover:bg-background/72",
+                    isSelected ? "bg-background/78 text-foreground shadow-[0_10px_24px_hsl(var(--foreground)/0.08)]" : "bg-transparent"
+                  )}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {isSelected ? <Check className="h-4 w-4 shrink-0 text-primary" /> : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
