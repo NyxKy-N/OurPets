@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Send } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
@@ -14,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 export default function FeedbackPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const { messages } = useI18n();
   const [content, setContent] = React.useState("");
   const [items, setItems] = React.useState<
@@ -35,6 +37,24 @@ export default function FeedbackPage() {
   });
 
   const canSubmit = Boolean(content.trim());
+
+  React.useEffect(() => {
+    if (content.trim()) return;
+    const report = searchParams.get("report");
+    if (!report) return;
+    if (report === "pet") {
+      const id = searchParams.get("id") ?? "";
+      const name = searchParams.get("name") ?? "";
+      const lines = [
+        "【举报】",
+        name || id ? `对象：宠物 ${name}${name && id ? " " : ""}${id ? `(${id})` : ""}` : "对象：宠物",
+        "原因：",
+        "",
+        "补充说明：",
+      ];
+      setContent(lines.join("\n"));
+    }
+  }, [content, searchParams]);
 
   React.useEffect(() => {
     let active = true;

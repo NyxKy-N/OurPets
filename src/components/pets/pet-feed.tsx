@@ -4,13 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, MoreHorizontal, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { PetCard, type PetFeedItem } from "@/components/pets/pet-card";
 import { PetCardSkeleton } from "@/components/pets/pet-card-skeleton";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
@@ -47,10 +49,12 @@ export function PetFeed() {
   const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
   const [density, setDensity] = React.useState<"standard" | "compact">("standard");
   const [isMobile, setIsMobile] = React.useState(false);
+  const [reducedMotion, setReducedMotion] = React.useState(false);
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
   const [fabY, setFabY] = React.useState<number | null>(null);
   const [fabXOffset, setFabXOffset] = React.useState(0);
+  const [fabIsDragging, setFabIsDragging] = React.useState(false);
   const draggingRef = React.useRef(false);
   const pointerIdRef = React.useRef<number | null>(null);
   const startClientXRef = React.useRef(0);
@@ -145,6 +149,19 @@ export function PetFeed() {
     return () => {
       mq.removeEventListener("change", onChange);
     };
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const handler = () =>
+        setReducedMotion(m.matches || document.documentElement.classList.contains("reduced-effects"));
+      handler();
+      m.addEventListener("change", handler);
+      return () => m.removeEventListener("change", handler);
+    } catch {
+      setReducedMotion(document.documentElement.classList.contains("reduced-effects"));
+    }
   }, []);
 
   React.useEffect(() => {
@@ -403,11 +420,11 @@ export function PetFeed() {
                   />
                 </div>
                 {isMobile ? (
-                  <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+                  <div className="min-w-0 flex items-center gap-2 overflow-x-auto overscroll-x-contain px-1 pb-1">
                     <Button
                       variant={type === "ALL" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setType("ALL")}
                     >
                       {messages.feed.all}
@@ -415,7 +432,7 @@ export function PetFeed() {
                     <Button
                       variant={type === "DOG" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setType("DOG")}
                     >
                       {messages.feed.dogs}
@@ -423,7 +440,7 @@ export function PetFeed() {
                     <Button
                       variant={type === "CAT" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setType("CAT")}
                     >
                       {messages.feed.cats}
@@ -431,7 +448,7 @@ export function PetFeed() {
                     <Button
                       variant={type === "OTHER" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setType("OTHER")}
                     >
                       {messages.feed.other}
@@ -440,7 +457,7 @@ export function PetFeed() {
                     <Button
                       variant={sort === "LATEST" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setSort("LATEST")}
                     >
                       {messages.discover.latest}
@@ -448,7 +465,7 @@ export function PetFeed() {
                     <Button
                       variant={sort === "POPULAR" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setSort("POPULAR")}
                     >
                       {messages.discover.popular}
@@ -457,7 +474,7 @@ export function PetFeed() {
                     <Button
                       variant={density === "compact" ? "default" : "outline"}
                       size="sm"
-                      className="shrink-0 rounded-full"
+                      className="shrink-0 rounded-full whitespace-nowrap"
                       onClick={() => setDensity((v) => (v === "compact" ? "standard" : "compact"))}
                     >
                       {density === "compact" ? messages.discover.densityCompact : messages.discover.densityStandard}
@@ -478,6 +495,71 @@ export function PetFeed() {
                       >
                         {messages.feed.refresh}
                       </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" type="button" aria-label="胶囊设置">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" sideOffset={10}>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setFabSide("left");
+                              setFabXOffset(0);
+                            }}
+                          >
+                            固定在左边
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setFabSide("right");
+                              setFabXOffset(0);
+                            }}
+                          >
+                            固定在右边
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const next = clampFabY((fabY ?? clampFabY(window.innerHeight - 108)) - 56);
+                              setFabY(next);
+                              try {
+                                localStorage.setItem("discover:fabY", String(next));
+                              } catch {
+                              }
+                            }}
+                          >
+                            上移
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const next = clampFabY((fabY ?? clampFabY(window.innerHeight - 108)) + 56);
+                              setFabY(next);
+                              try {
+                                localStorage.setItem("discover:fabY", String(next));
+                              } catch {
+                              }
+                            }}
+                          >
+                            下移
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setFabSide("right");
+                              setFabXOffset(0);
+                              const next = clampFabY(window.innerHeight - 108);
+                              setFabY(next);
+                              try {
+                                localStorage.removeItem("discover:fabY");
+                              } catch {
+                              }
+                            }}
+                          >
+                            恢复默认
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="outline"
                         size="icon"
@@ -578,59 +660,82 @@ export function PetFeed() {
         </div>
       </div>
 
-      <div key={resultsKey} className={`content-stream mt-7 grid gap-5 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
-        {query.isLoading ? (
-          <>
-            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
-            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
-            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
-          </>
-        ) : items.length === 0 ? (
-          <Reveal className="cv-auto">
-            <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center md:col-span-2 xl:col-span-3">
-              <div className="absolute left-8 top-8 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
-              <div className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-pink-400/10 blur-2xl" />
-              <div className="relative mx-auto flex h-18 w-18 items-center justify-center rounded-full border border-border/60 bg-background/75">
-                <div className="absolute -right-2 -top-2 rounded-full bg-background p-2 shadow-sm">
-                  <Sparkles className="h-4 w-4 text-amber-500" />
+      <AnimatePresence initial={false} mode="wait">
+        <motion.div
+          key={resultsKey}
+          className={`content-stream mt-7 grid gap-5 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}
+          initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {query.isLoading ? (
+            <>
+              <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+              <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+              <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+            </>
+          ) : items.length === 0 ? (
+            <Reveal className="cv-auto">
+              <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center md:col-span-2 xl:col-span-3">
+                <div className="absolute left-8 top-8 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
+                <div className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-pink-400/10 blur-2xl" />
+                <div className="relative mx-auto flex h-18 w-18 items-center justify-center rounded-full border border-border/60 bg-background/75">
+                  <div className="absolute -right-2 -top-2 rounded-full bg-background p-2 shadow-sm">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <Search className="h-8 w-8 text-primary" />
                 </div>
-                <Search className="h-8 w-8 text-primary" />
+                <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em]">
+                  {hasActiveSearch ? messages.feed.emptySearchTitle : messages.feed.empty}
+                </h3>
+                <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                  {hasActiveSearch ? messages.feed.emptySearchDescription : messages.feed.empty}
+                </p>
+                {hasActiveSearch ? (
+                  <div className="mt-5 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setQ("");
+                        setType("ALL");
+                      }}
+                    >
+                      {messages.feed.refresh}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
-              <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em]">
-                {hasActiveSearch ? messages.feed.emptySearchTitle : messages.feed.empty}
-              </h3>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-                {hasActiveSearch ? messages.feed.emptySearchDescription : messages.feed.empty}
-              </p>
-              {hasActiveSearch ? (
-                <div className="mt-5 flex justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setQ("");
-                      setType("ALL");
-                    }}
-                  >
-                    {messages.feed.refresh}
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </Reveal>
-        ) : (
-          items.map((pet, index) => (
-            <Reveal key={pet.id} delay={Math.min(index * 70, 280)} className="cv-auto">
-              <PetCard
-                pet={pet}
-                layout={isMobile && !mobileTwoColumn ? "list" : "grid"}
-                density={isMobile ? density : "standard"}
-                imagePriority={index < 2 && query.data?.pages?.length === 1}
-                className="h-full"
-              />
             </Reveal>
-          ))
-        )}
-      </div>
+          ) : (
+            <AnimatePresence initial={false}>
+              {items.map((pet, index) => (
+                <motion.div
+                  key={pet.id}
+                  layout
+                  className="cv-auto"
+                  initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10, scale: 0.985 }}
+                  transition={{
+                    duration: 0.26,
+                    ease: [0.22, 1, 0.36, 1],
+                    delay: reducedMotion ? 0 : Math.min(index * 0.02, 0.12),
+                  }}
+                >
+                  <PetCard
+                    pet={pet}
+                    layout={isMobile && !mobileTwoColumn ? "list" : "grid"}
+                    density={isMobile ? density : "standard"}
+                    imagePriority={index < 2 && query.data?.pages?.length === 1}
+                    className="h-full"
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       <div ref={sentinelRef} className="h-1" />
 
@@ -652,7 +757,12 @@ export function PetFeed() {
         className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
         style={
           fabY != null
-            ? { top: 0, transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`, willChange: "transform" }
+            ? {
+                top: 0,
+                transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`,
+                willChange: "transform",
+                transition: fabIsDragging || reducedMotion ? "none" : "transform 180ms var(--ease-bounce)",
+              }
             : { bottom: "1.5rem" }
         }
         onPointerDown={(e) => {
@@ -675,6 +785,7 @@ export function PetFeed() {
           if (!draggingRef.current && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) return;
           if (!draggingRef.current) {
             draggingRef.current = true;
+            setFabIsDragging(true);
             try {
               (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             } catch {
@@ -722,6 +833,7 @@ export function PetFeed() {
             }
           }
           draggingRef.current = false;
+          setFabIsDragging(false);
         }}
         onPointerCancel={(e) => {
           if (pointerIdRef.current !== e.pointerId) return;
@@ -733,6 +845,7 @@ export function PetFeed() {
           pendingXRef.current = null;
           pendingYRef.current = null;
           draggingRef.current = false;
+          setFabIsDragging(false);
         }}
       >
         <div

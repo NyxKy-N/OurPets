@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ChevronLeft, Heart, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, Flag, Heart, Pencil, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { useI18n } from "@/app/providers";
@@ -57,6 +57,7 @@ export function PetDetail({
   const hero = pet.images[0]?.url;
   const canManagePet = Boolean(viewerId && (viewerId === pet.ownerId || viewerIsAdmin));
   const ownerHref = viewerId === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
+  const reportHref = `/feedback?report=pet&id=${encodeURIComponent(pet.id)}&name=${encodeURIComponent(pet.name)}`;
   const birthDateLabel = pet.birthDate
     ? new Intl.DateTimeFormat(locale, { year: "numeric", month: "long" }).format(new Date(pet.birthDate))
     : null;
@@ -124,7 +125,19 @@ export function PetDetail({
               variant="outline"
               size="icon"
               className="absolute left-4 top-4 z-10 h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:left-6 sm:top-6"
-              onClick={() => router.back()}
+              onClick={() => {
+                if (document.documentElement.classList.contains("reduced-effects")) {
+                  router.back();
+                  return;
+                }
+                const doc = document as unknown as { startViewTransition?: (cb: () => void) => void };
+                const svt = doc.startViewTransition;
+                if (!svt) {
+                  router.back();
+                  return;
+                }
+                svt(() => router.back());
+              }}
               aria-label="返回"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -132,7 +145,7 @@ export function PetDetail({
             {hero ? (
               <>
                 <div className="absolute inset-0 bg-black/10" />
-                <div className="absolute inset-4 sm:inset-6">
+                <div className="absolute inset-4 sm:inset-6" style={{ viewTransitionName: `pet-image-${pet.id}` }}>
                   <Image
                     src={hero}
                     alt={pet.name}
@@ -209,7 +222,14 @@ export function PetDetail({
                       {messages.petDetail.delete}
                     </Button>
                   </>
-                ) : null}
+                ) : (
+                  <Button asChild variant="outline" className="w-full gap-2 sm:w-auto">
+                    <Link href={reportHref} prefetch={false}>
+                      <Flag className="h-4 w-4" />
+                      举报
+                    </Link>
+                  </Button>
+                )}
               </div>
             </div>
 

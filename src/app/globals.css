@@ -391,6 +391,13 @@
       inset 0 1px 0 hsl(var(--background) / 0.78);
   }
 
+  .soft-control:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow:
+      0 10px 26px hsl(var(--foreground) / 0.06),
+      inset 0 1px 0 hsl(var(--background) / 0.7);
+  }
+
   .dark .soft-control:hover,
   .dark .soft-control:focus-visible {
     border-color: hsl(214 86% 72% / 0.24);
@@ -460,7 +467,7 @@
   }
 
   .route-transition {
-    animation: route-enter 420ms var(--ease-soft);
+    will-change: opacity, transform;
   }
 
   .content-stream {
@@ -485,18 +492,6 @@
   }
 }
 
-@keyframes route-enter {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 12px, 0);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
 @keyframes stream-enter {
   0% {
     opacity: 0;
@@ -506,6 +501,50 @@
   100% {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 180% 0;
+  }
+
+  100% {
+    background-position: -180% 0;
+  }
+}
+
+@supports (view-transition-name: none) {
+  ::view-transition-old(root) {
+    animation: vt-fade-out-down 180ms var(--ease-soft) both;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-fade-in-up 220ms var(--ease-soft) both;
+  }
+}
+
+@keyframes vt-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes vt-fade-out-down {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
   }
 }
 
@@ -519,7 +558,8 @@
   .hover-lift,
   .reveal-enter,
   .route-transition,
-  .content-stream {
+  .content-stream,
+  .skeleton {
     transition: none;
     transform: none;
     animation: none;

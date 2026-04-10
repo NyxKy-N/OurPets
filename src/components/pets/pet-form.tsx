@@ -321,6 +321,24 @@ export function PetForm({
   const imageCountLabel =
     locale === "zh" ? `${images.length}${messages.form.imageCount}` : `${images.length} ${messages.form.imageCount}`;
 
+  const descValue = form.watch("description") ?? "";
+  const riskHints = React.useMemo(() => {
+    const hints: string[] = [];
+    const riskyContact = /(微信|VX|V信|QQ|加我|私聊|手机号|电话|wx|qq)/i.test(descValue);
+    const riskyPayment = /(转账|押金|定金|红包|收款|支付宝|支付)/i.test(descValue);
+    if (riskyContact) hints.push("检测到“联系方式”相关词汇，建议走站内私信/申请流程，谨防诈骗");
+    if (riskyPayment) hints.push("检测到“支付/押金”相关词汇，平台不建议线下转账，请谨慎");
+    if (!form.watch("breed")?.trim()) hints.push("建议填写品种，增加可信度");
+    if (!form.watch("description")?.trim()) {
+      // 已在校验中提示，这里不重复
+    } else {
+      if (!/北京|上海|广州|深圳|杭州|成都|武汉|西安|天津|苏州|重庆|南京|厦门|长沙|郑州|青岛|宁波|大连|合肥|福州|佛山|无锡|东莞|沈阳|南昌|南宁|昆明|济南|哈尔滨|长春|石家庄|太原|贵阳|南通|珠海|泉州|绍兴|温州|嘉兴|台州|金华|常州|中山|惠州|烟台|唐山|保定|徐州|洛阳|临沂|潍坊|兰州|呼和浩特|乌鲁木齐|海口|三亚|其他/i.test(descValue)) {
+        hints.push("建议在描述中补充“所在城市/区域”，方便附近用户联系");
+      }
+    }
+    return hints;
+  }, [descValue, form]);
+
   return (
     <Card className="rounded-[34px] p-5 sm:p-7">
       <div className="mb-4 text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
@@ -340,6 +358,10 @@ export function PetForm({
             toast.error(imageError ?? messages.form.imageLimitHint);
             return;
           }
+          if (riskHints.length > 0) {
+            const ok = confirm(`发布内容包含以下风险提示：\n- ${riskHints.join("\n- ")}\n\n确认继续发布吗？`);
+            if (!ok) return;
+          }
           submit.mutate(values);
         })}
       >
@@ -348,6 +370,22 @@ export function PetForm({
             <div className="text-sm font-medium text-foreground">{messages.form.liveValidationTitle}</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {validationItems.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-amber-400/30 bg-background/70 px-3 py-1 text-xs text-muted-foreground"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {riskHints.length > 0 ? (
+          <div className="glass-panel rounded-[26px] border border-amber-400/30 bg-amber-500/8 p-4 sm:p-5">
+            <div className="text-sm font-medium text-foreground">内容规范与风险提示</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {riskHints.map((item) => (
                 <span
                   key={item}
                   className="rounded-full border border-amber-400/30 bg-background/70 px-3 py-1 text-xs text-muted-foreground"

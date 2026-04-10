@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Trash2 } from "lucide-react";
+import { Flag, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -55,10 +55,12 @@ export function PetCard({
   const img = pet.images?.[0];
   const isGrid = layout === "grid";
   const isCompact = density === "compact";
+  const petHref = `/pet/${pet.id}`;
   const canManagePet = Boolean(
     session?.user?.id && (session.user.id === pet.owner.id || session.user.isAdmin)
   );
   const ownerHref = session?.user?.id === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
+  const reportHref = `/feedback?report=pet&id=${encodeURIComponent(pet.id)}&name=${encodeURIComponent(pet.name)}`;
   const deletePet = useMutation({
     mutationFn: () => apiFetch<{ id: string }>(`/api/pets/${pet.id}`, { method: "DELETE" }),
     onSuccess: async () => {
@@ -92,7 +94,7 @@ export function PetCard({
               variant="outline"
               size="icon"
               className={cn(
-                "h-9 w-9 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
+                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
                 isGrid ? "" : "hidden"
               )}
               aria-label={messages.petDetail.edit}
@@ -105,7 +107,7 @@ export function PetCard({
               variant="outline"
               size="icon"
               className={cn(
-                "h-9 w-9 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
+                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
                 isGrid ? "" : "hidden"
               )}
               aria-label={messages.petDetail.delete}
@@ -142,10 +144,47 @@ export function PetCard({
             </Button>
           </div>
         ) : (
-          <div className="w-2 shrink-0" />
+          <div className="flex items-center gap-2">
+            <Button
+              asChild
+              variant="outline"
+              size="icon"
+              className={cn(
+                "h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:hidden",
+                isGrid ? "" : "hidden"
+              )}
+              aria-label="举报"
+            >
+              <Link href={reportHref} prefetch={false}>
+                <Flag className="h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className={cn("hidden sm:inline-flex", isGrid ? "" : "sm:inline-flex")}>
+              <Link href={reportHref} prefetch={false}>
+                <Flag className="mr-1 h-4 w-4" />
+                举报
+              </Link>
+            </Button>
+          </div>
         )}
       </div>
-      <Link href={`/pet/${pet.id}`} prefetch={false} className="block">
+      <Link
+        href={petHref}
+        prefetch={false}
+        className="block"
+        onClick={(e) => {
+          if (e.defaultPrevented) return;
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          if (e.button !== 0) return;
+          if (document.documentElement.classList.contains("reduced-effects")) return;
+          if (typeof document === "undefined") return;
+          const doc = document as unknown as { startViewTransition?: (cb: () => void) => void };
+          const svt = doc.startViewTransition;
+          if (!svt) return;
+          e.preventDefault();
+          svt(() => router.push(petHref));
+        }}
+      >
         <div
           className={cn(
             "rounded-[26px] sm:p-5",
@@ -160,6 +199,7 @@ export function PetCard({
                 ? "aspect-[4/4.2] min-h-[200px] sm:min-h-[240px]"
                 : "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
             )}
+            style={{ viewTransitionName: `pet-image-${pet.id}` }}
           >
             {img ? (
               <Image
