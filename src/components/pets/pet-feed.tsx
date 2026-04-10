@@ -289,7 +289,7 @@ export function PetFeed() {
   return (
     <section id="pet-feed" className="scroll-mt-28">
       <div className="discover-shell relative z-[90] space-y-4">
-        <div className="glass-panel-strong sticky top-20 z-[95] self-start overflow-hidden rounded-[30px] p-3.5 sm:p-4">
+        <div className="glass-panel-strong relative z-[95] self-start overflow-hidden rounded-[30px] p-3.5 sm:p-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">

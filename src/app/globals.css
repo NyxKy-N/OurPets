@@ -144,7 +144,6 @@
 
 @layer components {
   @media (max-width: 639px) {
-    .discover-shell,
     .discover-shell .glass-panel,
     .discover-shell .glass-panel-strong {
       background:
@@ -160,7 +159,6 @@
       backdrop-filter: blur(32px) saturate(165%);
     }
 
-    .dark .discover-shell,
     .dark .discover-shell .glass-panel,
     .dark .discover-shell .glass-panel-strong {
       background:
