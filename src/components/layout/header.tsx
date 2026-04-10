@@ -211,7 +211,7 @@ export function Header() {
         <div className="flex min-w-0 items-center gap-3">
           <Link
             href="/"
-            className="gradient-text shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-[transform,opacity] duration-300 ease-out hover:-translate-y-0.5 hover:opacity-80 sm:text-xl"
+            className="gradient-text shrink-0 rounded-full px-1 text-lg font-semibold tracking-[-0.04em] transition-opacity duration-300 ease-out hover:opacity-80 sm:text-xl"
           >
             OurPets
           </Link>
