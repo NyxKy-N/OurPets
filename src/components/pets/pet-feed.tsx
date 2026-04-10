@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowLeftRight, ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -45,18 +45,35 @@ export function PetFeed() {
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
   const [fabY, setFabY] = React.useState<number | null>(null);
+  const [fabXOffset, setFabXOffset] = React.useState(0);
   const draggingRef = React.useRef(false);
   const pointerIdRef = React.useRef<number | null>(null);
+  const startClientXRef = React.useRef(0);
   const startClientYRef = React.useRef(0);
+  const startFabXOffsetRef = React.useRef(0);
   const startFabYRef = React.useRef(0);
+  const pendingXRef = React.useRef<number | null>(null);
   const pendingYRef = React.useRef<number | null>(null);
   const rafIdRef = React.useRef<number | null>(null);
+  const fabMeasureRef = React.useRef<HTMLDivElement | null>(null);
+  const fabWidthRef = React.useRef<number>(48);
 
   const clampFabY = React.useCallback((y: number) => {
     const min = 84;
     const max = Math.max(window.innerHeight - 120, min + 1);
     return Math.min(Math.max(y, min), max);
   }, []);
+
+  const clampFabXOffset = React.useCallback(
+    (x: number, side: "left" | "right") => {
+      const margin = 24;
+      const width = fabWidthRef.current || 48;
+      const available = Math.max(window.innerWidth - margin * 2 - width, 0);
+      if (side === "left") return Math.min(Math.max(x, 0), available);
+      return Math.min(Math.max(x, -available), 0);
+    },
+    []
+  );
 
   React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -93,10 +110,28 @@ export function PetFeed() {
         if (current == null) return current;
         return clampFabY(current);
       });
+      setFabXOffset((current) => clampFabXOffset(current, fabSide));
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [clampFabY]);
+  }, [clampFabXOffset, clampFabY, fabSide]);
+
+  React.useEffect(() => {
+    const el = fabMeasureRef.current;
+    if (!el) return;
+
+    const measure = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0) fabWidthRef.current = rect.width;
+    };
+
+    measure();
+
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => measure());
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   React.useEffect(() => {
     try {
@@ -358,10 +393,11 @@ export function PetFeed() {
       ) : null}
 
       <div
+        ref={fabMeasureRef}
         className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
         style={
           fabY != null
-            ? { top: 0, transform: `translate3d(0, ${fabY}px, 0)`, willChange: "transform" }
+            ? { top: 0, transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`, willChange: "transform" }
             : { bottom: "1.5rem" }
         }
         onPointerDown={(e) => {
@@ -369,15 +405,19 @@ export function PetFeed() {
           if (e.pointerType === "mouse") return;
           pointerIdRef.current = e.pointerId;
           draggingRef.current = false;
+          startClientXRef.current = e.clientX;
           startClientYRef.current = e.clientY;
+          startFabXOffsetRef.current = fabXOffset;
           startFabYRef.current = fabY ?? clampFabY(window.innerHeight - 108);
+          pendingXRef.current = null;
           pendingYRef.current = null;
         }}
         onPointerMove={(e) => {
           if (!isMobile) return;
           if (pointerIdRef.current !== e.pointerId) return;
-          const delta = e.clientY - startClientYRef.current;
-          if (!draggingRef.current && Math.abs(delta) < 6) return;
+          const deltaX = e.clientX - startClientXRef.current;
+          const deltaY = e.clientY - startClientYRef.current;
+          if (!draggingRef.current && Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 6) return;
           if (!draggingRef.current) {
             draggingRef.current = true;
             try {
@@ -385,15 +425,17 @@ export function PetFeed() {
             } catch {
             }
           }
-          const next = clampFabY(startFabYRef.current + delta);
-          pendingYRef.current = next;
+          pendingXRef.current = clampFabXOffset(startFabXOffsetRef.current + deltaX, fabSide);
+          pendingYRef.current = clampFabY(startFabYRef.current + deltaY);
           if (rafIdRef.current != null) return;
           rafIdRef.current = window.requestAnimationFrame(() => {
             rafIdRef.current = null;
+            const x = pendingXRef.current;
             const y = pendingYRef.current;
-            if (y == null) return;
+            pendingXRef.current = null;
             pendingYRef.current = null;
-            setFabY(y);
+            if (x != null) setFabXOffset(x);
+            if (y != null) setFabY(y);
           });
           e.preventDefault();
         }}
@@ -405,14 +447,22 @@ export function PetFeed() {
             window.cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = null;
           }
+          if (pendingXRef.current != null) {
+            const next = pendingXRef.current;
+            pendingXRef.current = null;
+            setFabXOffset(next);
+          }
           if (pendingYRef.current != null) {
             const next = pendingYRef.current;
             pendingYRef.current = null;
             setFabY(next);
           }
-          if (draggingRef.current && finalY != null) {
+          if (draggingRef.current) {
+            const nextSide = e.clientX < window.innerWidth / 2 ? "left" : "right";
+            setFabSide(nextSide);
+            setFabXOffset(0);
             try {
-              localStorage.setItem("discover:fabY", String(finalY));
+              if (finalY != null) localStorage.setItem("discover:fabY", String(finalY));
             } catch {
             }
           }
@@ -425,12 +475,13 @@ export function PetFeed() {
             window.cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = null;
           }
+          pendingXRef.current = null;
           pendingYRef.current = null;
           draggingRef.current = false;
         }}
       >
         <div
-          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
+          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-border/70 bg-background/55 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
             floatingActionsOpen
               ? "translate-y-0 scale-100 opacity-100"
               : "pointer-events-none translate-y-2 scale-[0.92] opacity-0"
@@ -438,7 +489,7 @@ export function PetFeed() {
         >
           <button
             type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="返回顶部"
           >
@@ -447,23 +498,14 @@ export function PetFeed() {
           <Link
             href="/pets/new"
             prefetch={false}
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             aria-label={messages.header.addPet}
           >
             <Plus className="h-5 w-5" />
           </Link>
           <button
             type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
-            onClick={() => setFabSide((s) => (s === "right" ? "left" : "right"))}
-            aria-label="切换位置"
-            title="切换位置"
-          >
-            <ArrowLeftRight className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             onClick={() => setFloatingActionsOpen(false)}
             aria-label={messages.discover.hideFilters}
           >
@@ -473,7 +515,7 @@ export function PetFeed() {
 
         <button
           type="button"
-          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
+          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-background/65 active:scale-[0.98] ${
             floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
           }`}
           onClick={() => setFloatingActionsOpen(true)}
