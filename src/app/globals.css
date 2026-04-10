@@ -284,7 +284,6 @@
 
   .navbar-shell.is-scrolled {
     opacity: 0.96;
-    transform: translateY(1px);
     backdrop-filter: blur(20px) saturate(132%);
   }
 

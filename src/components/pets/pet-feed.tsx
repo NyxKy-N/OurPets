@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowUp, ChevronDown, Search, Sparkles } from "lucide-react";
+import { ArrowUp, ChevronDown, LayoutGrid, LayoutList, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -39,6 +39,7 @@ export function PetFeed() {
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
   const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+  const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
 
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
@@ -117,6 +118,17 @@ export function PetFeed() {
                     <Button
                       variant="outline"
                       type="button"
+                      onClick={() => setMobileTwoColumn((v) => !v)}
+                      className="w-full sm:hidden"
+                      aria-label={
+                        mobileTwoColumn ? messages.discover.switchToSingleColumn : messages.discover.switchToTwoColumns
+                      }
+                    >
+                      {mobileTwoColumn ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      type="button"
                       onClick={() => setMobileFiltersOpen((v) => !v)}
                       className="w-full sm:hidden"
                       aria-expanded={mobileFiltersOpen}
@@ -188,7 +200,10 @@ export function PetFeed() {
         </div>
       </div>
 
-      <div key={resultsKey} className="content-stream mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div
+        key={resultsKey}
+        className={`content-stream mt-7 grid gap-5 ${mobileTwoColumn ? "grid-cols-2" : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}
+      >
         {query.isLoading ? (
           <>
             <PetCardSkeleton layout="grid" />
@@ -239,7 +254,7 @@ export function PetFeed() {
       <div ref={sentinelRef} className="h-1" />
 
       {query.isFetchingNextPage ? (
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className={`mt-4 grid gap-4 ${mobileTwoColumn ? "grid-cols-2" : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
           <PetCardSkeleton layout="grid" />
           <PetCardSkeleton layout="grid" />
         </div>
@@ -253,7 +268,7 @@ export function PetFeed() {
 
       <button
         type="button"
-        className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+        className="soft-control fixed bottom-24 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="返回顶部"
       >

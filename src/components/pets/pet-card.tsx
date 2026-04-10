@@ -112,7 +112,7 @@ export function PetCard({
               className={cn(
                 "relative w-full overflow-hidden rounded-[24px] bg-muted",
                 isGrid
-                  ? "aspect-[4/4.2] min-h-[240px]"
+                  ? "aspect-[4/4.2] min-h-[200px] sm:min-h-[240px]"
                   : "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
               )}
             >

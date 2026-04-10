@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -43,6 +44,7 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const { locale, messages, setLocale } = useI18n();
   const [scrolled, setScrolled] = React.useState(false);
+  const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const me = useQuery({
     queryKey: ["me"],
@@ -63,7 +65,25 @@ export function Header() {
   });
 
   React.useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 18);
+    const lastYRef = { value: window.scrollY };
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 18);
+
+      const isDesktop = window.matchMedia("(min-width: 640px)").matches;
+      if (!isDesktop) {
+        lastYRef.value = y;
+        return;
+      }
+
+      const delta = y - lastYRef.value;
+      if (Math.abs(delta) < 8) return;
+
+      if (delta > 0 && y > 88) setDesktopHidden(true);
+      if (delta < 0) setDesktopHidden(false);
+      lastYRef.value = y;
+    };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -107,10 +127,14 @@ export function Header() {
   const displayEmail = me.data?.email ?? session?.user?.email ?? "";
 
   return (
-    <header className="px-3 pt-4 sm:px-4 sm:pt-5">
-      <div
-        className={`navbar-shell glass-panel-strong mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5 sm:px-5 ${scrolled ? "is-scrolled" : ""}`}
-      >
+    <header
+      className={cn(
+        "navbar-shell fixed inset-x-0 top-0 z-50 w-full border-b border-border/60 bg-background/55 backdrop-blur-xl",
+        scrolled ? "is-scrolled bg-background/72" : "",
+        desktopHidden ? "sm:-translate-y-full" : "sm:translate-y-0"
+      )}
+    >
+      <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-3.5 sm:px-6">
         <div className="flex items-center justify-between gap-3">
           <Link
             href="/"
