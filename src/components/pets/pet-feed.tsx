@@ -307,7 +307,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`motion-collapse absolute left-0 right-0 top-full z-30 mt-4 grid gap-3 overflow-hidden transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto ${
+              className={`glass-panel-strong motion-collapse absolute left-0 right-0 top-full z-30 mt-4 grid gap-3 overflow-hidden rounded-[28px] p-3.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
