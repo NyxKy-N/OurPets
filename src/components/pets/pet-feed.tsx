@@ -565,152 +565,157 @@ export function PetFeed() {
         </div>
       ) : null}
 
-      <div
-        className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
-        style={
-          fabY != null
-            ? {
-                top: 0,
-                transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`,
-                willChange: "transform",
-                transition: fabIsDragging ? "none" : "transform 180ms var(--ease-bounce)",
+      {typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
+              style={
+                fabY != null
+                  ? {
+                      top: 0,
+                      transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`,
+                      willChange: "transform",
+                      transition: fabIsDragging ? "none" : "transform 180ms var(--ease-bounce)",
+                    }
+                  : { bottom: "1.5rem" }
               }
-            : { bottom: "1.5rem" }
-        }
-        onPointerDown={(e) => {
-          if (!isMobile) return;
-          if (e.pointerType === "mouse") return;
-          pointerIdRef.current = e.pointerId;
-          draggingRef.current = false;
-          setFabIsDragging(false);
-          startClientXRef.current = e.clientX;
-          startClientYRef.current = e.clientY;
-          startFabXOffsetRef.current = fabXOffset;
-          startFabYRef.current = fabY ?? clampFabY(window.innerHeight - 108);
-          pendingXRef.current = null;
-          pendingYRef.current = null;
-        }}
-        onPointerMove={(e) => {
-          if (!isMobile) return;
-          if (pointerIdRef.current !== e.pointerId) return;
-          const deltaX = e.clientX - startClientXRef.current;
-          const delta = e.clientY - startClientYRef.current;
-          if (!draggingRef.current && Math.max(Math.abs(deltaX), Math.abs(delta)) < 6) return;
-          if (!draggingRef.current) {
-            draggingRef.current = true;
-            setFabIsDragging(true);
-            lockScroll();
-            try {
-              (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-            } catch {
-            }
-          }
-          pendingXRef.current = clampFabXOffset(startFabXOffsetRef.current + deltaX);
-          const next = clampFabY(startFabYRef.current + delta);
-          pendingYRef.current = next;
-          if (rafIdRef.current != null) return;
-          rafIdRef.current = window.requestAnimationFrame(() => {
-            rafIdRef.current = null;
-            const x = pendingXRef.current;
-            const y = pendingYRef.current;
-            pendingXRef.current = null;
-            pendingYRef.current = null;
-            if (x != null) setFabXOffset(x);
-            if (y != null) setFabY(y);
-          });
-          e.preventDefault();
-        }}
-        onPointerUp={(e) => {
-          if (pointerIdRef.current !== e.pointerId) return;
-          pointerIdRef.current = null;
-          const finalY = pendingYRef.current ?? fabY;
-          if (rafIdRef.current != null) {
-            window.cancelAnimationFrame(rafIdRef.current);
-            rafIdRef.current = null;
-          }
-          if (pendingXRef.current != null) {
-            const next = pendingXRef.current;
-            pendingXRef.current = null;
-            setFabXOffset(next);
-          }
-          if (pendingYRef.current != null) {
-            const next = pendingYRef.current;
-            pendingYRef.current = null;
-            setFabY(next);
-          }
-          if (draggingRef.current) {
-            const snapThreshold = window.innerWidth * 0.55;
-            const nextSide = e.clientX <= snapThreshold ? "left" : "right";
-            setFabSide(nextSide);
-            setFabXOffset(0);
-          }
-          if (draggingRef.current && finalY != null) {
-            try {
-              localStorage.setItem("discover:fabY", String(finalY));
-            } catch {
-            }
-          }
-          draggingRef.current = false;
-          setFabIsDragging(false);
-          unlockScroll();
-        }}
-        onPointerCancel={(e) => {
-          if (pointerIdRef.current !== e.pointerId) return;
-          pointerIdRef.current = null;
-          if (rafIdRef.current != null) {
-            window.cancelAnimationFrame(rafIdRef.current);
-            rafIdRef.current = null;
-          }
-          pendingXRef.current = null;
-          pendingYRef.current = null;
-          draggingRef.current = false;
-          setFabIsDragging(false);
-          unlockScroll();
-        }}
-      >
-        <div
-          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-border/70 bg-background/55 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
-            floatingActionsOpen
-              ? "translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-2 scale-[0.92] opacity-0"
-          }`}
-        >
-          <button
-            type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            aria-label="返回顶部"
-          >
-            <ArrowUp className="h-5 w-5" />
-          </button>
-          <Link
-            href="/pets/new"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
-            aria-label={messages.header.addPet}
-          >
-            <Plus className="h-5 w-5" />
-          </Link>
-          <button
-            type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
-            onClick={() => setFloatingActionsOpen(false)}
-            aria-label={messages.discover.hideFilters}
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+              onPointerDown={(e) => {
+                if (!isMobile) return;
+                if (e.pointerType === "mouse") return;
+                pointerIdRef.current = e.pointerId;
+                draggingRef.current = false;
+                setFabIsDragging(false);
+                startClientXRef.current = e.clientX;
+                startClientYRef.current = e.clientY;
+                startFabXOffsetRef.current = fabXOffset;
+                startFabYRef.current = fabY ?? clampFabY(window.innerHeight - 108);
+                pendingXRef.current = null;
+                pendingYRef.current = null;
+              }}
+              onPointerMove={(e) => {
+                if (!isMobile) return;
+                if (pointerIdRef.current !== e.pointerId) return;
+                const deltaX = e.clientX - startClientXRef.current;
+                const delta = e.clientY - startClientYRef.current;
+                if (!draggingRef.current && Math.max(Math.abs(deltaX), Math.abs(delta)) < 6) return;
+                if (!draggingRef.current) {
+                  draggingRef.current = true;
+                  setFabIsDragging(true);
+                  lockScroll();
+                  try {
+                    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+                  } catch {
+                  }
+                }
+                pendingXRef.current = clampFabXOffset(startFabXOffsetRef.current + deltaX);
+                const next = clampFabY(startFabYRef.current + delta);
+                pendingYRef.current = next;
+                if (rafIdRef.current != null) return;
+                rafIdRef.current = window.requestAnimationFrame(() => {
+                  rafIdRef.current = null;
+                  const x = pendingXRef.current;
+                  const y = pendingYRef.current;
+                  pendingXRef.current = null;
+                  pendingYRef.current = null;
+                  if (x != null) setFabXOffset(x);
+                  if (y != null) setFabY(y);
+                });
+                e.preventDefault();
+              }}
+              onPointerUp={(e) => {
+                if (pointerIdRef.current !== e.pointerId) return;
+                pointerIdRef.current = null;
+                const finalY = pendingYRef.current ?? fabY;
+                if (rafIdRef.current != null) {
+                  window.cancelAnimationFrame(rafIdRef.current);
+                  rafIdRef.current = null;
+                }
+                if (pendingXRef.current != null) {
+                  const next = pendingXRef.current;
+                  pendingXRef.current = null;
+                  setFabXOffset(next);
+                }
+                if (pendingYRef.current != null) {
+                  const next = pendingYRef.current;
+                  pendingYRef.current = null;
+                  setFabY(next);
+                }
+                if (draggingRef.current) {
+                  const snapThreshold = window.innerWidth * 0.55;
+                  const nextSide = e.clientX <= snapThreshold ? "left" : "right";
+                  setFabSide(nextSide);
+                  setFabXOffset(0);
+                }
+                if (draggingRef.current && finalY != null) {
+                  try {
+                    localStorage.setItem("discover:fabY", String(finalY));
+                  } catch {
+                  }
+                }
+                draggingRef.current = false;
+                setFabIsDragging(false);
+                unlockScroll();
+              }}
+              onPointerCancel={(e) => {
+                if (pointerIdRef.current !== e.pointerId) return;
+                pointerIdRef.current = null;
+                if (rafIdRef.current != null) {
+                  window.cancelAnimationFrame(rafIdRef.current);
+                  rafIdRef.current = null;
+                }
+                pendingXRef.current = null;
+                pendingYRef.current = null;
+                draggingRef.current = false;
+                setFabIsDragging(false);
+                unlockScroll();
+              }}
+            >
+              <div
+                className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-border/70 bg-background/55 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
+                  floatingActionsOpen
+                    ? "translate-y-0 scale-100 opacity-100"
+                    : "pointer-events-none translate-y-2 scale-[0.92] opacity-0"
+                }`}
+              >
+                <button
+                  type="button"
+                  className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
+                  onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                  aria-label="返回顶部"
+                >
+                  <ArrowUp className="h-5 w-5" />
+                </button>
+                <Link
+                  href="/pets/new"
+                  className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
+                  aria-label={messages.header.addPet}
+                >
+                  <Plus className="h-5 w-5" />
+                </Link>
+                <button
+                  type="button"
+                  className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
+                  onClick={() => setFloatingActionsOpen(false)}
+                  aria-label={messages.discover.hideFilters}
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
 
-        <button
-          type="button"
-          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-background/65 active:scale-[0.98] ${
-            floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
-          }`}
-          onClick={() => setFloatingActionsOpen(true)}
-          aria-label={messages.discover.showFilters}
-        >
-          {fabSide === "right" ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
-        </button>
-      </div>
+              <button
+                type="button"
+                className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-background/65 active:scale-[0.98] ${
+                  floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
+                }`}
+                onClick={() => setFloatingActionsOpen(true)}
+                aria-label={messages.discover.showFilters}
+              >
+                {fabSide === "right" ? <ChevronLeft className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+              </button>
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }

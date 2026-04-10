@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarDays, ShieldCheck, X } from "lucide-react";
+import { CalendarDays, ChevronDown, ShieldCheck, X } from "lucide-react";
 
 import { startViewTransition, useI18n } from "@/app/providers";
 import { createPetSchema, petFormSchema } from "@/lib/validators/pets";
@@ -263,7 +263,7 @@ export function PetForm({
   const currentYear = new Date().getUTCFullYear();
   const yearOptions = Array.from({ length: 41 }, (_, index) => currentYear - index);
   const selectClassName =
-    "h-11 rounded-2xl border border-input/70 bg-background/72 px-4 text-sm shadow-[inset_0_1px_0_hsl(var(--background)/0.65)] backdrop-blur-xl";
+    "h-11 w-full appearance-none rounded-2xl border border-input/70 bg-[linear-gradient(180deg,hsl(var(--background)/0.82),hsl(var(--background)/0.68))] px-4 pr-11 text-sm text-foreground shadow-[0_10px_28px_hsl(var(--foreground)/0.06),inset_0_1px_0_hsl(0_0%_100%/0.32)] backdrop-blur-xl transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:var(--ease-bounce)] outline-none focus:border-primary/40 focus:shadow-[0_14px_36px_hsl(var(--primary)/0.12),inset_0_1px_0_hsl(0_0%_100%/0.4)]";
 
   const [images, setImages] = React.useState<UploadedImage[]>(initial?.images ?? []);
   const [uploading, setUploading] = React.useState(false);
@@ -674,26 +674,32 @@ export function PetForm({
                 {messages.form.birthMonth}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <select
-                  className={selectClassName}
-                  {...form.register("birthYear", { valueAsNumber: true })}
-                >
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className={selectClassName}
-                  {...form.register("birthMonth", { valueAsNumber: true })}
-                >
-                  {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
-                    <option key={month} value={month}>
-                      {month.toString().padStart(2, "0")}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    className={selectClassName}
+                    {...form.register("birthYear", { valueAsNumber: true })}
+                  >
+                    {yearOptions.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
+                <div className="relative">
+                  <select
+                    className={selectClassName}
+                    {...form.register("birthMonth", { valueAsNumber: true })}
+                  >
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map((month) => (
+                      <option key={month} value={month}>
+                        {month.toString().padStart(2, "0")}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                </div>
               </div>
               {form.formState.errors.birthYear || form.formState.errors.birthMonth ? (
                 <p className="text-xs text-destructive">
@@ -706,11 +712,14 @@ export function PetForm({
           <div className="glass-panel rounded-[26px] p-4 sm:p-5">
             <div className="grid gap-2">
               <label className="text-sm font-medium">{messages.form.type}</label>
-              <select className={selectClassName} {...form.register("type")}>
-                <option value="DOG">{messages.form.dog}</option>
-                <option value="CAT">{messages.form.cat}</option>
-                <option value="OTHER">{messages.form.other}</option>
-              </select>
+              <div className="relative">
+                <select className={selectClassName} {...form.register("type")}>
+                  <option value="DOG">{messages.form.dog}</option>
+                  <option value="CAT">{messages.form.cat}</option>
+                  <option value="OTHER">{messages.form.other}</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </div>
           </div>
         </div>
@@ -719,11 +728,14 @@ export function PetForm({
           <div className="glass-panel rounded-[26px] p-4 sm:p-5">
             <div className="grid gap-2">
               <label className="text-sm font-medium">{messages.form.gender}</label>
-              <select className={selectClassName} {...form.register("gender")}>
-                <option value="UNKNOWN">{messages.form.unknownGender}</option>
-                <option value="MALE">{messages.form.male}</option>
-                <option value="FEMALE">{messages.form.female}</option>
-              </select>
+              <div className="relative">
+                <select className={selectClassName} {...form.register("gender")}>
+                  <option value="UNKNOWN">{messages.form.unknownGender}</option>
+                  <option value="MALE">{messages.form.male}</option>
+                  <option value="FEMALE">{messages.form.female}</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              </div>
             </div>
           </div>
 
