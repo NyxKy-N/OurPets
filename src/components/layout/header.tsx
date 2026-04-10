@@ -50,7 +50,6 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
-  const [activeDropdownMenu, setActiveDropdownMenu] = React.useState<"language" | "notifications" | "account" | null>(null);
   const [mobileNavRect, setMobileNavRect] = React.useState<{ left: number; top: number; width: number } | null>(null);
   const mobileShellRef = React.useRef<HTMLDivElement | null>(null);
   const mobileNavMenuRef = React.useRef<HTMLDivElement | null>(null);
@@ -130,7 +129,6 @@ export function Header() {
 
   React.useEffect(() => {
     setMobileNavOpen(false);
-    setActiveDropdownMenu(null);
   }, [pathname]);
 
   const announceOverlayOpen = React.useCallback((source: string) => {
@@ -141,9 +139,6 @@ export function Header() {
     const onOverlayOpen = (event: Event) => {
       const source = (event as CustomEvent<{ source?: string }>).detail?.source;
       if (source !== "header-mobile-nav") setMobileNavOpen(false);
-      if (source !== "header-language-menu" && source !== "header-notifications-menu" && source !== "header-account-menu") {
-        setActiveDropdownMenu(null);
-      }
     };
     window.addEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
     return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
@@ -279,13 +274,7 @@ export function Header() {
 
           {!session ? (
             <>
-              <DropdownMenu
-                open={activeDropdownMenu === "language"}
-                onOpenChange={(open) => {
-                  setActiveDropdownMenu(open ? "language" : null);
-                  if (open) announceOverlayOpen("header-language-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 gap-2 px-3.5">
                     <Languages className="h-4 w-4" />
@@ -318,13 +307,7 @@ export function Header() {
             </>
           ) : (
             <>
-              <DropdownMenu
-                open={activeDropdownMenu === "language"}
-                onOpenChange={(open) => {
-                  setActiveDropdownMenu(open ? "language" : null);
-                  if (open) announceOverlayOpen("header-language-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="hidden h-10 gap-2 px-3.5 sm:inline-flex">
                     <Languages className="h-4 w-4" />
@@ -362,13 +345,7 @@ export function Header() {
             <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
           ) : session ? (
             <>
-              <DropdownMenu
-                open={activeDropdownMenu === "notifications"}
-                onOpenChange={(open) => {
-                  setActiveDropdownMenu(open ? "notifications" : null);
-                  if (open) announceOverlayOpen("header-notifications-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-notifications-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -446,13 +423,7 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu
-                open={activeDropdownMenu === "account"}
-                onOpenChange={(open) => {
-                  setActiveDropdownMenu(open ? "account" : null);
-                  if (open) announceOverlayOpen("header-account-menu");
-                }}
-              >
+              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-account-menu")}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 px-2.5">
                     <Avatar className="h-8 w-8">
@@ -551,9 +522,10 @@ export function Header() {
               ref={mobileNavMenuRef}
               className="glass-panel-strong motion-collapse fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
               style={{
-                left: mobileNavRect.left,
+                left: "50%",
                 top: mobileNavRect.top,
-                width: mobileNavRect.width,
+                width: `min(calc(100vw - 24px), ${mobileNavRect.width}px)`,
+                transform: "translateX(-50%)",
               }}
             >
               <nav className="flex flex-col gap-1">

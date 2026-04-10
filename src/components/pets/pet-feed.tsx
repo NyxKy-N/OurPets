@@ -478,9 +478,10 @@ export function PetFeed() {
               ref={mobileFiltersMenuRef}
               className="glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
               style={{
-                left: mobileFiltersRect.left,
+                left: "50%",
                 top: mobileFiltersRect.top,
-                width: mobileFiltersRect.width,
+                width: `min(calc(100vw - 24px), ${mobileFiltersRect.width}px)`,
+                transform: "translateX(-50%)",
               }}
             >
               <div className="px-3 py-2.5">
