@@ -10,7 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CalendarDays, ShieldCheck, X } from "lucide-react";
 
-import { useI18n } from "@/app/providers";
+import { startViewTransition, useI18n } from "@/app/providers";
 import { createPetSchema, petFormSchema } from "@/lib/validators/pets";
 import { apiFetch } from "@/lib/fetcher";
 import { Button } from "@/components/ui/button";
@@ -144,7 +144,9 @@ export function PetFormPage({ mode, petId }: { mode: "create" | "edit"; petId?: 
     if (status !== "authenticated") return;
     if (!petQuery.data) return;
     if (canEditPet) return;
-    router.replace(`/pet/${petId}`);
+    void startViewTransition(() => {
+      router.replace(`/pet/${petId}`);
+    });
   }, [canEditPet, mode, petId, petQuery.data, router, status]);
 
   if (status === "loading") {
@@ -277,7 +279,9 @@ export function PetForm({
     onSuccess: async (pet) => {
       toast.success(mode === "create" ? messages.form.petCreated : messages.form.petUpdated);
       await qc.invalidateQueries({ queryKey: ["pets"] });
-      router.push(`/pet/${pet.id}`);
+      await startViewTransition(() => {
+        router.push(`/pet/${pet.id}`);
+      });
     },
     onError: (err: unknown) => toast.error(errorMessage(err, messages.form.failedToSave)),
   });
@@ -545,7 +549,16 @@ export function PetForm({
         </div>
 
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button type="button" variant="outline" onClick={() => router.back()} className="w-full sm:w-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              void startViewTransition(() => {
+                router.back();
+              })
+            }
+            className="w-full sm:w-auto"
+          >
             {messages.common.cancel}
           </Button>
           <Button

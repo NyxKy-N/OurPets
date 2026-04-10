@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex transform-gpu items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -47,14 +47,28 @@ function Button({
   size,
   asChild = false,
   type,
+  onPointerDown,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
+
+  const handlePointerDown = React.useCallback(
+    (event: React.PointerEvent<HTMLElement>) => {
+      onPointerDown?.(event as never);
+      if (event.defaultPrevented) return;
+      if (event.pointerType !== "touch") return;
+      if (typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return;
+      navigator.vibrate(8);
+    },
+    [onPointerDown]
+  );
+
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
       {...(!asChild ? { type: type ?? "button" } : {})}
+      onPointerDown={handlePointerDown as never}
       {...props}
     />
   );

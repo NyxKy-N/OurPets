@@ -72,7 +72,10 @@ export function PetCard({
   });
 
   return (
-    <Card className={cn("group overflow-hidden rounded-[30px] p-1", className)}>
+    <Card
+      className={cn("group overflow-hidden rounded-[30px] p-1", className)}
+      style={{ viewTransitionName: `pet-shell-${pet.id}` }}
+    >
       <div className={cn("flex items-center justify-between gap-2 pb-0 sm:px-4", isCompact ? "px-2.5 pt-2.5" : "px-3 pt-3")}>
         <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
           <Link href={ownerHref} className="inline-flex min-w-0 items-center gap-2">
@@ -223,6 +226,7 @@ export function PetCard({
                     "font-semibold tracking-[-0.04em]",
                     isGrid ? "line-clamp-1 text-xl" : "truncate text-xl sm:text-2xl"
                   )}
+                  style={{ viewTransitionName: `pet-title-${pet.id}` }}
                 >
                   {pet.name}
                 </div>

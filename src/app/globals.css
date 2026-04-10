@@ -57,8 +57,10 @@
     --ring: 214 40% 42%;
 
     --radius: 14px;
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
     --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
     --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-ios-snap: cubic-bezier(0.175, 0.885, 0.32, 1.275);
   }
 
   .dark {
@@ -362,16 +364,16 @@
       0 4px 12px hsl(var(--foreground) / 0.05),
       inset 0 1px 0 hsl(var(--background) / 0.78);
     transition:
-      transform 340ms var(--ease-bounce),
-      box-shadow 340ms var(--ease-soft),
-      border-color 280ms var(--ease-soft),
-      background-color 280ms var(--ease-soft),
-      color 280ms var(--ease-soft),
-      opacity 280ms var(--ease-soft);
+      transform 420ms var(--ease-bounce),
+      box-shadow 380ms var(--ease-soft),
+      border-color 300ms var(--ease-standard),
+      background-color 300ms var(--ease-standard),
+      color 300ms var(--ease-standard),
+      opacity 300ms var(--ease-standard);
   }
 
   .glass-button:hover {
-    transform: translateY(-2px) scale(1.03);
+    transform: translateY(-1.5px) scale(1.022);
     box-shadow:
       0 20px 44px hsl(var(--foreground) / 0.12),
       0 8px 16px hsl(var(--foreground) / 0.06),
@@ -379,7 +381,7 @@
   }
 
   .glass-button:active {
-    transform: translateY(0) scale(0.97);
+    transform: translateY(0) scale(0.96);
   }
 
   .dark .glass-button {
@@ -406,10 +408,10 @@
 
   .soft-control {
     transition:
-      transform 300ms var(--ease-bounce),
-      box-shadow 300ms var(--ease-soft),
-      border-color 260ms var(--ease-soft),
-      background-color 260ms var(--ease-soft);
+      transform 360ms var(--ease-bounce),
+      box-shadow 320ms var(--ease-soft),
+      border-color 280ms var(--ease-standard),
+      background-color 280ms var(--ease-standard);
   }
 
   .dark .soft-control {
@@ -419,14 +421,14 @@
   }
 
   .soft-control:hover {
-    transform: translateY(-1px);
+    transform: translateY(-1px) scale(1.01);
     box-shadow:
       0 18px 34px hsl(var(--foreground) / 0.08),
       inset 0 1px 0 hsl(var(--background) / 0.78);
   }
 
   .soft-control:active {
-    transform: translateY(0) scale(0.98);
+    transform: translateY(0) scale(0.96);
     box-shadow:
       0 10px 26px hsl(var(--foreground) / 0.06),
       inset 0 1px 0 hsl(var(--background) / 0.7);
@@ -443,11 +445,11 @@
 
   .navbar-shell {
     transition:
-      opacity 520ms var(--ease-soft),
-      backdrop-filter 520ms var(--ease-soft),
-      background-color 520ms var(--ease-soft),
-      border-color 520ms var(--ease-soft),
-      transform 520ms var(--ease-soft);
+      opacity 620ms var(--ease-soft),
+      backdrop-filter 620ms var(--ease-soft),
+      background-color 620ms var(--ease-standard),
+      border-color 620ms var(--ease-standard),
+      transform 620ms var(--ease-bounce);
     will-change: opacity, transform, backdrop-filter;
   }
 
@@ -462,14 +464,14 @@
 
   .hover-lift {
     transition:
-      transform 340ms var(--ease-bounce),
-      box-shadow 320ms var(--ease-soft),
-      border-color 280ms var(--ease-soft),
-      background-color 280ms var(--ease-soft);
+      transform 420ms var(--ease-bounce),
+      box-shadow 340ms var(--ease-soft),
+      border-color 300ms var(--ease-standard),
+      background-color 300ms var(--ease-standard);
   }
 
   .hover-lift:hover {
-    transform: translateY(-4px) scale(1.004);
+    transform: translateY(-4px) scale(1.01);
   }
 
   .dark .hover-lift:hover {
@@ -501,7 +503,7 @@
   }
 
   .route-transition {
-    will-change: opacity;
+    will-change: opacity, transform;
   }
 
   .content-stream {
@@ -510,17 +512,17 @@
 
   .motion-collapse {
     transition:
-      max-height 520ms var(--ease-soft),
-      opacity 520ms var(--ease-soft),
-      transform 520ms var(--ease-soft);
+      max-height 560ms var(--ease-soft),
+      opacity 420ms var(--ease-standard),
+      transform 560ms var(--ease-bounce);
     will-change: opacity, transform;
     transform-origin: top;
   }
 
   .motion-pop {
     transition:
-      opacity 520ms var(--ease-soft),
-      transform 520ms var(--ease-soft);
+      opacity 420ms var(--ease-standard),
+      transform 560ms var(--ease-bounce);
     will-change: opacity, transform;
     transform-origin: bottom right;
   }
@@ -549,12 +551,17 @@
 }
 
 @supports (view-transition-name: none) {
+  ::view-transition-group(*) {
+    animation-duration: 520ms;
+    animation-timing-function: var(--ease-bounce);
+  }
+
   ::view-transition-old(root) {
-    animation: vt-fade-out-down 180ms var(--ease-soft) both;
+    animation: vt-fade-out-down 240ms var(--ease-standard) both;
   }
 
   ::view-transition-new(root) {
-    animation: vt-fade-in-up 220ms var(--ease-soft) both;
+    animation: vt-fade-in-up 340ms var(--ease-bounce) both;
   }
 }
 

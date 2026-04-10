@@ -10,7 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowUpRight, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
-import { useI18n } from "@/app/providers";
+import { startViewTransition, useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { formatCompactLabel, formatPetAge } from "@/lib/i18n";
 import type { PetFeedItem } from "@/components/pets/pet-card";
@@ -62,7 +62,9 @@ export function Hero({ messages }: { messages: Messages }) {
   const handleAddPetClick = async () => {
     if (status === "loading") return;
     if (session?.user?.id) {
-      router.push("/pets/new");
+      await startViewTransition(() => {
+        router.push("/pets/new");
+      });
       return;
     }
 

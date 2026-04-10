@@ -72,6 +72,33 @@ type ReducedEffectsContextValue = {
 
 const ReducedEffectsContext = React.createContext<ReducedEffectsContextValue | null>(null);
 
+export function startViewTransition(update: () => void | Promise<void>) {
+  if (typeof document === "undefined") {
+    return Promise.resolve(update()).then(() => undefined);
+  }
+
+  if (document.documentElement.classList.contains("reduced-effects")) {
+    return Promise.resolve(update()).then(() => undefined);
+  }
+
+  const doc = document as Document & {
+    startViewTransition?: (
+      callback: () => void | Promise<void>
+    ) => { finished: Promise<void> };
+  };
+
+  if (typeof doc.startViewTransition !== "function") {
+    return Promise.resolve(update()).then(() => undefined);
+  }
+
+  try {
+    const transition = doc.startViewTransition(() => update());
+    return transition.finished.catch(() => undefined);
+  } catch {
+    return Promise.resolve(update()).then(() => undefined);
+  }
+}
+
 function LocaleProvider({
   children,
   initialLocale,
@@ -222,9 +249,9 @@ export function Providers({
 
       e.preventDefault();
       const nextHref = `${url.pathname}${url.search}${url.hash}`;
-      (document as unknown as { startViewTransition: (cb: () => void) => unknown }).startViewTransition(
-        () => router.push(nextHref)
-      );
+      void startViewTransition(() => {
+        router.push(nextHref);
+      });
     };
 
     document.addEventListener("click", onClick, true);

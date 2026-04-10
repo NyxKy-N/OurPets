@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ChevronLeft, Flag, Heart, Pencil, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { useI18n } from "@/app/providers";
+import { startViewTransition, useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
 import { formatPetAge, getPetGenderLabel, getPetTypeLabel } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -57,12 +57,18 @@ export function PetDetail({
   const safeBack = React.useCallback(() => {
     try {
       if (window.history.length > 1) {
-        router.back();
+        void startViewTransition(() => {
+          router.back();
+        });
       } else {
-        router.push("/");
+        void startViewTransition(() => {
+          router.push("/");
+        });
       }
     } catch {
-      router.push("/");
+      void startViewTransition(() => {
+        router.push("/");
+      });
     }
   }, [router]);
 
@@ -122,7 +128,9 @@ export function PetDetail({
     onSuccess: async () => {
       toast.success(messages.petDetail.petDeleted);
       await qc.invalidateQueries({ queryKey: ["pets"] });
-      router.push("/");
+      await startViewTransition(() => {
+        router.push("/");
+      });
     },
     onError: (err: unknown) => toast.error(errorMessage(err, messages.petDetail.failedToDelete)),
   });
@@ -130,7 +138,7 @@ export function PetDetail({
   return (
     <div className="space-y-6">
       <Reveal>
-        <Card className="overflow-hidden rounded-[34px] p-1">
+        <Card className="overflow-hidden rounded-[34px] p-1" style={{ viewTransitionName: `pet-shell-${pet.id}` }}>
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[30px] bg-muted sm:h-[30rem] sm:aspect-auto">
             <Button
               type="button"
@@ -166,7 +174,10 @@ export function PetDetail({
                 <div className="mb-3 inline-flex rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase backdrop-blur-xl">
                   {getPetTypeLabel(locale, pet.type)}
                 </div>
-                <h1 className="break-words text-3xl font-semibold tracking-[-0.04em] sm:text-4xl">
+                <h1
+                  className="break-words text-3xl font-semibold tracking-[-0.04em] sm:text-4xl"
+                  style={{ viewTransitionName: `pet-title-${pet.id}` }}
+                >
                   {pet.name}
                 </h1>
                 <div className="mt-3 flex flex-wrap gap-2 text-sm leading-6 text-muted-foreground">

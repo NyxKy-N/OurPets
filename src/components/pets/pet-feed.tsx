@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -472,74 +473,81 @@ export function PetFeed() {
       </div>
 
       <div ref={sentinelRef} className="h-1" />
-      {mobileFiltersOpen && mobileFiltersRect
+      {typeof document !== "undefined"
         ? createPortal(
-            <div
-              ref={mobileFiltersMenuRef}
-              className="glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
-              style={{
-                left: "50%",
-                top: mobileFiltersRect.top,
-                width: `min(calc(100vw - 24px), ${mobileFiltersRect.width}px)`,
-                transform: "translateX(-50%)",
-              }}
-            >
-              <div className="px-3 py-2.5">
-                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.discover.categoryLabel}
-                </div>
-                <Tabs
-                  value={type}
-                  onValueChange={(v) => {
-                    if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") {
-                      setType(v);
-                      setMobileFiltersOpen(false);
-                    }
+            <AnimatePresence>
+              {mobileFiltersOpen && mobileFiltersRect ? (
+                <motion.div
+                  ref={mobileFiltersMenuRef}
+                  className="glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
+                  style={{
+                    left: "50%",
+                    top: mobileFiltersRect.top,
+                    width: `min(calc(100vw - 24px), ${mobileFiltersRect.width}px)`,
                   }}
-                  className="w-full"
+                  initial={{ opacity: 0, y: -10, scale: 0.972, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                  exit={{ opacity: 0, y: -8, scale: 0.978, x: "-50%" }}
+                  transition={{ type: "spring", mass: 0.82, damping: 22, stiffness: 300 }}
                 >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
-                    <TabsTrigger value="ALL" className="w-full text-[13px]">
-                      {messages.feed.all}
-                    </TabsTrigger>
-                    <TabsTrigger value="DOG" className="w-full text-[13px]">
-                      {messages.feed.dogs}
-                    </TabsTrigger>
-                    <TabsTrigger value="CAT" className="w-full text-[13px]">
-                      {messages.feed.cats}
-                    </TabsTrigger>
-                    <TabsTrigger value="OTHER" className="w-full text-[13px]">
-                      {messages.feed.other}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-              <div className="mx-2 h-px bg-border/70" />
-              <div className="px-3 py-2.5">
-                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.discover.sortLabel}
-                </div>
-                <Tabs
-                  value={sort}
-                  onValueChange={(v) => {
-                    if (v === "LATEST" || v === "POPULAR") {
-                      setSort(v);
-                      setMobileFiltersOpen(false);
-                    }
-                  }}
-                  className="w-full"
-                >
-                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
-                    <TabsTrigger value="LATEST" className="w-full">
-                      {messages.discover.latest}
-                    </TabsTrigger>
-                    <TabsTrigger value="POPULAR" className="w-full">
-                      {messages.discover.popular}
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
-            </div>,
+                  <div className="px-3 py-2.5">
+                    <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                      {messages.discover.categoryLabel}
+                    </div>
+                    <Tabs
+                      value={type}
+                      onValueChange={(v) => {
+                        if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") {
+                          setType(v);
+                          setMobileFiltersOpen(false);
+                        }
+                      }}
+                      className="w-full"
+                    >
+                      <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
+                        <TabsTrigger value="ALL" className="w-full text-[13px]">
+                          {messages.feed.all}
+                        </TabsTrigger>
+                        <TabsTrigger value="DOG" className="w-full text-[13px]">
+                          {messages.feed.dogs}
+                        </TabsTrigger>
+                        <TabsTrigger value="CAT" className="w-full text-[13px]">
+                          {messages.feed.cats}
+                        </TabsTrigger>
+                        <TabsTrigger value="OTHER" className="w-full text-[13px]">
+                          {messages.feed.other}
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                  <div className="mx-2 h-px bg-border/70" />
+                  <div className="px-3 py-2.5">
+                    <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                      {messages.discover.sortLabel}
+                    </div>
+                    <Tabs
+                      value={sort}
+                      onValueChange={(v) => {
+                        if (v === "LATEST" || v === "POPULAR") {
+                          setSort(v);
+                          setMobileFiltersOpen(false);
+                        }
+                      }}
+                      className="w-full"
+                    >
+                      <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
+                        <TabsTrigger value="LATEST" className="w-full">
+                          {messages.discover.latest}
+                        </TabsTrigger>
+                        <TabsTrigger value="POPULAR" className="w-full">
+                          {messages.discover.popular}
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
             document.body
           )
         : null}

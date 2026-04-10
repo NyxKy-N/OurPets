@@ -8,6 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sparkles, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { useI18n, useReducedEffects } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
@@ -516,36 +517,43 @@ export function Header() {
           {navContent}
         </div>
       </div>
-      {mobileNavOpen && mobileNavRect
+      {typeof document !== "undefined"
         ? createPortal(
-            <div
-              ref={mobileNavMenuRef}
-              className="glass-panel-strong motion-collapse fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
-              style={{
-                left: "50%",
-                top: mobileNavRect.top,
-                width: `min(calc(100vw - 24px), ${mobileNavRect.width}px)`,
-                transform: "translateX(-50%)",
-              }}
-            >
-              <nav className="flex flex-col gap-1">
-                {primaryLinks.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-current={item.active ? "page" : undefined}
-                    onClick={() => setMobileNavOpen(false)}
-                    className={`inline-flex items-center rounded-[20px] px-3 py-2.5 text-sm transition-[transform,background-color,color] duration-300 [transition-timing-function:var(--ease-soft)] ${
-                      item.active
-                        ? "bg-accent/70 text-foreground"
-                        : "text-foreground/78 hover:bg-accent/55 hover:text-foreground"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-            </div>,
+            <AnimatePresence>
+              {mobileNavOpen && mobileNavRect ? (
+                <motion.div
+                  ref={mobileNavMenuRef}
+                  className="glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
+                  style={{
+                    left: "50%",
+                    top: mobileNavRect.top,
+                    width: `min(calc(100vw - 24px), ${mobileNavRect.width}px)`,
+                  }}
+                  initial={{ opacity: 0, y: -10, scale: 0.972, x: "-50%" }}
+                  animate={{ opacity: 1, y: 0, scale: 1, x: "-50%" }}
+                  exit={{ opacity: 0, y: -8, scale: 0.978, x: "-50%" }}
+                  transition={{ type: "spring", mass: 0.82, damping: 22, stiffness: 300 }}
+                >
+                  <nav className="flex flex-col gap-1">
+                    {primaryLinks.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        aria-current={item.active ? "page" : undefined}
+                        onClick={() => setMobileNavOpen(false)}
+                        className={`inline-flex items-center rounded-[20px] px-3 py-2.5 text-sm transition-[transform,background-color,color] duration-500 [transition-timing-function:var(--ease-bounce)] ${
+                          item.active
+                            ? "bg-accent/70 text-foreground"
+                            : "text-foreground/78 hover:bg-accent/55 hover:text-foreground"
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>,
             document.body
           )
         : null}
