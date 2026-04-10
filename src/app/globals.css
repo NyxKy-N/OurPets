@@ -104,30 +104,37 @@
 
   body {
     @apply bg-background text-foreground;
+    position: relative;
+    isolation: isolate;
+    transition:
+      background-color 280ms var(--ease-soft),
+      color 280ms var(--ease-soft);
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
     background-image:
       radial-gradient(circle at 14% 12%, hsl(var(--primary) / 0.12), transparent 24%),
       radial-gradient(circle at 88% 18%, hsl(34 36% 86% / 0.36), transparent 26%),
       radial-gradient(circle at 62% 0%, hsl(var(--foreground) / 0.04), transparent 34%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.94));
-    background-attachment: fixed;
+    background-repeat: no-repeat;
     transition:
-      background-image 280ms var(--ease-soft),
-      background-color 280ms var(--ease-soft),
-      color 280ms var(--ease-soft);
+      opacity 320ms var(--ease-soft),
+      background-image 320ms var(--ease-soft),
+      background-color 320ms var(--ease-soft);
   }
 
-  .dark body {
+  .dark body::before {
     background-image:
       radial-gradient(circle at 18% 10%, hsl(var(--primary) / 0.14), transparent 22%),
       radial-gradient(circle at 86% 16%, hsl(34 28% 62% / 0.1), transparent 26%),
       radial-gradient(circle at 50% 0%, hsl(var(--foreground) / 0.04), transparent 36%),
       linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.94));
-  }
-
-  @media (max-width: 639px) {
-    body {
-      background-attachment: scroll;
-    }
   }
 
   ::selection {
@@ -503,6 +510,8 @@
   }
 
   .route-transition {
+    min-height: 100%;
+    background: transparent;
     will-change: opacity, transform;
   }
 
