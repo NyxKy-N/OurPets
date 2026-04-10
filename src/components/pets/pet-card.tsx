@@ -65,9 +65,11 @@ export function PetCard({
   );
   const ownerHref = session?.user?.id === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
   const reportHref = `/feedback?report=pet&id=${encodeURIComponent(pet.id)}&name=${encodeURIComponent(pet.name)}`;
-  const stopLinkNavigation = React.useCallback((e: React.MouseEvent | React.PointerEvent) => {
+  const stopLinkNavigation = React.useCallback((e: React.SyntheticEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    const ne = (e as unknown as { nativeEvent?: { stopImmediatePropagation?: () => void } }).nativeEvent;
+    ne?.stopImmediatePropagation?.();
   }, []);
   const openOwner = React.useCallback(
     (e: React.MouseEvent) => {
@@ -186,6 +188,9 @@ export function PetCard({
                   type="button"
                   className="soft-control absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-left text-xs text-white/92 backdrop-blur-xl hover:bg-black/30 active:scale-[0.98]"
                   onClickCapture={stopLinkNavigation}
+                  onPointerDown={stopLinkNavigation}
+                  onMouseDown={stopLinkNavigation}
+                  onTouchStart={stopLinkNavigation}
                   onClick={openOwner}
                   aria-label={pet.owner.name ?? messages.common.unknown}
                 >
