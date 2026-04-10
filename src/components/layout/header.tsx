@@ -230,36 +230,74 @@ export function Header() {
             <Sparkles className="h-5 w-5" />
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="h-10 gap-2 px-3.5">
-                <Languages className="h-4 w-4" />
-                <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>{messages.header.language}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {locales.map((value) => (
-                <DropdownMenuItem key={value} onClick={() => setLocale(value)}>
-                  <span className="flex flex-1 items-center justify-between gap-3">
-                    {messages.languages[value]}
-                    {value === locale ? <Check className="h-4 w-4" /> : null}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {!session ? (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="h-10 gap-2 px-3.5">
+                    <Languages className="h-4 w-4" />
+                    <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuLabel>{messages.header.language}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {locales.map((value) => (
+                    <DropdownMenuItem key={value} onClick={() => setLocale(value)}>
+                      <span className="flex flex-1 items-center justify-between gap-3">
+                        {messages.languages[value]}
+                        {value === locale ? <Check className="h-4 w-4" /> : null}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={messages.header.toggleTheme}
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          >
-            <Sun className="hidden h-5 w-5 dark:block" />
-            <Moon className="h-5 w-5 dark:hidden" />
-          </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={messages.header.toggleTheme}
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="hidden h-5 w-5 dark:block" />
+                <Moon className="h-5 w-5 dark:hidden" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="hidden h-10 gap-2 px-3.5 sm:inline-flex">
+                    <Languages className="h-4 w-4" />
+                    <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuLabel>{messages.header.language}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {locales.map((value) => (
+                    <DropdownMenuItem key={value} onClick={() => setLocale(value)}>
+                      <span className="flex flex-1 items-center justify-between gap-3">
+                        {messages.languages[value]}
+                        {value === locale ? <Check className="h-4 w-4" /> : null}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="hidden sm:inline-flex"
+                aria-label={messages.header.toggleTheme}
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              >
+                <Sun className="hidden h-5 w-5 dark:block" />
+                <Moon className="h-5 w-5 dark:hidden" />
+              </Button>
+            </>
+          )}
 
           {status === "loading" ? (
             <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
@@ -366,6 +404,30 @@ export function Header() {
                     </span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <div className="sm:hidden">
+                    <DropdownMenuLabel className="px-2 py-1.5 text-xs text-muted-foreground">
+                      {messages.header.language}
+                    </DropdownMenuLabel>
+                    {locales.map((value) => (
+                      <DropdownMenuItem key={value} onClick={() => setLocale(value)}>
+                        <span className="flex flex-1 items-center justify-between gap-3">
+                          {messages.languages[value]}
+                          {value === locale ? <Check className="h-4 w-4" /> : null}
+                        </span>
+                      </DropdownMenuItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                      aria-label={messages.header.toggleTheme}
+                    >
+                      <span className="flex flex-1 items-center justify-between gap-3">
+                        {messages.header.toggleTheme}
+                        {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </div>
                   <DropdownMenuItem asChild>
                     <Link href="/profile" prefetch={false}>
                       {messages.header.profile}
