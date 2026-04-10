@@ -28,33 +28,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 48 24% 97%;
+    --foreground: 225 16% 14%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 48 24% 97%;
+    --card-foreground: 225 16% 14%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 48 24% 97%;
+    --popover-foreground: 225 16% 14%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 156 18% 34%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 36 22% 92%;
+    --secondary-foreground: 225 16% 14%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 42 20% 92%;
+    --muted-foreground: 226 10% 36%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 154 18% 90%;
+    --accent-foreground: 225 16% 14%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 228 14% 86%;
+    --input: 228 14% 86%;
+    --ring: 156 18% 34%;
 
     --radius: 14px;
     --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
@@ -62,33 +62,33 @@
   }
 
   .dark {
-    --background: 228 30% 6%;
-    --foreground: 210 36% 96%;
+    --background: 222 16% 10%;
+    --foreground: 210 20% 96%;
 
-    --card: 229 26% 8%;
-    --card-foreground: 210 36% 96%;
+    --card: 222 16% 12%;
+    --card-foreground: 210 20% 96%;
 
-    --popover: 229 24% 10%;
-    --popover-foreground: 210 36% 96%;
+    --popover: 222 16% 12%;
+    --popover-foreground: 210 20% 96%;
 
-    --primary: 270 92% 72%;
-    --primary-foreground: 240 22% 12%;
+    --primary: 156 18% 52%;
+    --primary-foreground: 222 16% 10%;
 
-    --secondary: 223 20% 14%;
+    --secondary: 222 14% 16%;
     --secondary-foreground: 210 32% 94%;
 
-    --muted: 223 18% 13%;
-    --muted-foreground: 214 15% 68%;
+    --muted: 222 14% 16%;
+    --muted-foreground: 214 10% 72%;
 
-    --accent: 228 22% 16%;
+    --accent: 156 12% 18%;
     --accent-foreground: 210 34% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 230 18% 18%;
-    --input: 230 18% 18%;
-    --ring: 270 92% 72%;
+    --border: 220 10% 22%;
+    --input: 220 10% 22%;
+    --ring: 156 18% 52%;
   }
 
   * {
@@ -102,10 +102,10 @@
   body {
     @apply bg-background text-foreground;
     background-image:
-      radial-gradient(circle at top, hsl(var(--foreground) / 0.06), transparent 30%),
-      radial-gradient(circle at 16% 18%, hsl(var(--primary) / 0.09), transparent 24%),
-      radial-gradient(circle at 82% 0%, hsl(var(--foreground) / 0.05), transparent 26%),
-      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.96));
+      radial-gradient(circle at 14% 12%, hsl(var(--primary) / 0.12), transparent 24%),
+      radial-gradient(circle at 88% 18%, hsl(34 36% 86% / 0.36), transparent 26%),
+      radial-gradient(circle at 62% 0%, hsl(var(--foreground) / 0.04), transparent 34%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.94));
     background-attachment: fixed;
     transition:
       background-image 280ms var(--ease-soft),
@@ -115,11 +115,10 @@
 
   .dark body {
     background-image:
-      radial-gradient(circle at 12% 14%, hsl(var(--primary) / 0.18), transparent 20%),
-      radial-gradient(circle at 88% 10%, hsl(308 92% 66% / 0.14), transparent 22%),
-      radial-gradient(circle at 70% 64%, hsl(196 92% 60% / 0.08), transparent 26%),
-      radial-gradient(circle at 50% 0%, hsl(var(--foreground) / 0.04), transparent 34%),
-      linear-gradient(180deg, hsl(230 34% 5.4%), hsl(228 30% 6.6%) 42%, hsl(228 28% 6%));
+      radial-gradient(circle at 18% 10%, hsl(var(--primary) / 0.14), transparent 22%),
+      radial-gradient(circle at 86% 16%, hsl(34 28% 62% / 0.1), transparent 26%),
+      radial-gradient(circle at 50% 0%, hsl(var(--foreground) / 0.04), transparent 36%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background) / 0.94));
   }
 
   ::selection {
@@ -130,30 +129,32 @@
 @layer components {
   .glass-panel {
     background:
-      linear-gradient(180deg, hsl(var(--background) / 0.82), hsl(var(--background) / 0.66));
-    border: 1px solid hsl(var(--border) / 0.64);
-    backdrop-filter: blur(24px) saturate(155%);
+      linear-gradient(180deg, hsl(0 0% 100% / 0.56), hsl(0 0% 100% / 0.36));
+    border: 1px solid hsl(0 0% 100% / 0.72);
+    backdrop-filter: blur(28px) saturate(155%);
     box-shadow:
-      0 24px 70px hsl(var(--foreground) / 0.08),
-      0 8px 24px hsl(var(--foreground) / 0.04),
-      inset 0 1px 0 hsl(var(--background) / 0.72);
+      0 22px 64px hsl(var(--foreground) / 0.09),
+      0 8px 22px hsl(var(--foreground) / 0.05),
+      inset 0 1px 0 hsl(0 0% 100% / 0.88),
+      inset 0 -1px 0 hsl(var(--foreground) / 0.04);
   }
 
   .glass-panel-strong {
     background:
-      linear-gradient(180deg, hsl(var(--background) / 0.9), hsl(var(--background) / 0.78));
-    border: 1px solid hsl(var(--border) / 0.78);
-    backdrop-filter: blur(28px) saturate(165%);
+      linear-gradient(180deg, hsl(0 0% 100% / 0.68), hsl(0 0% 100% / 0.44));
+    border: 1px solid hsl(0 0% 100% / 0.82);
+    backdrop-filter: blur(32px) saturate(165%);
     box-shadow:
-      0 28px 90px hsl(var(--foreground) / 0.12),
-      0 10px 30px hsl(var(--foreground) / 0.06),
-      inset 0 1px 0 hsl(var(--background) / 0.78);
+      0 26px 88px hsl(var(--foreground) / 0.12),
+      0 10px 28px hsl(var(--foreground) / 0.06),
+      inset 0 1px 0 hsl(0 0% 100% / 0.9),
+      inset 0 -1px 0 hsl(var(--foreground) / 0.04);
   }
 
   .dark .glass-panel {
     background:
-      linear-gradient(180deg, hsl(224 22% 11% / 0.72), hsl(224 20% 9% / 0.56));
-    border: 1px solid hsl(216 26% 78% / 0.12);
+      linear-gradient(180deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.04));
+    border: 1px solid hsl(0 0% 100% / 0.12);
     backdrop-filter: blur(24px) saturate(135%);
     box-shadow:
       0 18px 40px hsl(222 40% 2% / 0.22),
@@ -164,8 +165,8 @@
 
   .dark .glass-panel-strong {
     background:
-      linear-gradient(180deg, hsl(224 22% 12% / 0.82), hsl(224 20% 10% / 0.68));
-    border: 1px solid hsl(216 24% 84% / 0.14);
+      linear-gradient(180deg, hsl(0 0% 100% / 0.12), hsl(0 0% 100% / 0.06));
+    border: 1px solid hsl(0 0% 100% / 0.16);
     backdrop-filter: blur(26px) saturate(142%);
     box-shadow:
       0 22px 48px hsl(222 44% 2% / 0.26),
@@ -284,7 +285,7 @@
   }
 
   .hover-lift:hover {
-    transform: translateY(-7px) scale(1.008);
+    transform: translateY(-4px) scale(1.004);
   }
 
   .dark .hover-lift:hover {
@@ -295,7 +296,7 @@
   }
 
   .gradient-text {
-    background-image: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--primary)), hsl(308 92% 66% / 0.92));
+    background-image: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--foreground) / 0.64), hsl(var(--primary) / 0.92));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

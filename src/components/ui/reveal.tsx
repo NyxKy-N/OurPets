@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { motion } from "framer-motion";
 
 import { cn } from "@/lib/utils";
 
@@ -15,37 +16,15 @@ export function Reveal({
   delay?: number;
   once?: boolean;
 }) {
-  const ref = React.useRef<HTMLDivElement | null>(null);
-  const [visible, setVisible] = React.useState(false);
-
-  React.useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          if (once) observer.disconnect();
-          return;
-        }
-
-        if (!once) setVisible(false);
-      },
-      { threshold: 0.18, rootMargin: "0px 0px -8% 0px" }
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [once]);
-
   return (
-    <div
-      ref={ref}
-      className={cn("reveal-enter", visible && "reveal-enter-visible", className)}
-      style={{ transitionDelay: `${delay}ms` }}
+    <motion.div
+      initial={{ opacity: 0, y: 16, scale: 0.986 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once, amount: 0.18, margin: "0px 0px -8% 0px" }}
+      transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1], delay: delay / 1000 }}
+      className={cn(className)}
     >
       {children}
-    </div>
+    </motion.div>
   );
 }

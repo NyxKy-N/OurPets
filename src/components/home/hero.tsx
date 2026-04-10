@@ -1,17 +1,34 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 import { ArrowUpRight, PawPrint, Sparkles } from "lucide-react";
 
 import type { Messages } from "@/lib/i18n";
+import { useI18n } from "@/app/providers";
+import { apiFetch } from "@/lib/fetcher";
+import { formatCompactLabel, formatPetAge } from "@/lib/i18n";
+import type { PetFeedItem } from "@/components/pets/pet-card";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
+
+type PetsPage = { items: PetFeedItem[]; nextCursor: string | null };
 
 export function Hero({ messages }: { messages: Messages }) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const { locale } = useI18n();
+
+  const featuredPets = useQuery({
+    queryKey: ["pets", { limit: 5, sort: "POPULAR" }],
+    queryFn: async () => apiFetch<PetsPage>("/api/pets?limit=5&sort=POPULAR"),
+  });
+  const pets = featuredPets.data?.items ?? [];
 
   const handleAddPetClick = async () => {
     if (status === "loading") return;
@@ -26,24 +43,19 @@ export function Hero({ messages }: { messages: Messages }) {
   return (
     <Reveal>
       <section className="glass-panel-strong relative overflow-hidden rounded-[40px] px-6 py-10 sm:px-9 sm:py-14 lg:px-14 lg:py-[4.5rem]">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/15 to-transparent" />
-        <div className="absolute -left-20 top-8 h-36 w-36 rounded-full bg-foreground/4 blur-3xl" />
-        <div className="absolute -right-16 bottom-0 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground/12 to-transparent" />
+        <div className="absolute -left-14 top-10 h-40 w-40 rounded-full bg-primary/12 blur-3xl" />
+        <div className="absolute -right-18 bottom-2 h-44 w-44 rounded-full bg-[hsl(34_36%_86%_/_0.55)] blur-3xl" />
 
-        <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.62fr)] lg:items-end lg:gap-12">
-          <div className="max-w-3xl">
-            <div className="mb-5 inline-flex rounded-full border border-border/60 bg-background/56 px-4 py-1.5 text-xs font-medium tracking-[0.24em] text-muted-foreground uppercase backdrop-blur-xl">
+        <div className="relative grid gap-10 lg:grid-cols-12 lg:items-center lg:gap-12">
+          <div className="lg:col-span-5 lg:pr-2">
+            <div className="inline-flex rounded-full border border-white/70 bg-white/40 px-4 py-1.5 text-xs font-semibold tracking-[0.24em] text-muted-foreground uppercase backdrop-blur-xl">
               {messages.home.eyebrow}
             </div>
-            <Reveal delay={70}>
-              <h1 className="gradient-text text-4xl font-semibold leading-tight tracking-[-0.04em] sm:text-5xl lg:text-6xl">
-                {messages.home.title}
-              </h1>
-            </Reveal>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
               {messages.home.description}
             </p>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground/88 sm:text-base">
+            <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground/88 sm:text-base">
               {messages.home.supporting}
             </p>
 
@@ -59,61 +71,100 @@ export function Hero({ messages }: { messages: Messages }) {
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            <Reveal delay={90}>
-              <div className="glass-panel rounded-[30px] p-5 sm:p-6 opacity-80">
-                <div className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.header.home}
-                </div>
-                <div className="mt-3 text-lg font-semibold tracking-tight">{messages.home.eyebrow}</div>
-                <div className="mt-2 text-sm leading-6 text-muted-foreground">{messages.home.supporting}</div>
-              </div>
-            </Reveal>
+          <div className="relative lg:col-span-7">
+            <motion.h1
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute -top-10 left-0 z-10 max-w-[18ch] text-[2.75rem] font-semibold leading-[0.92] tracking-[-0.06em] text-foreground/92 sm:-top-12 sm:text-[3.6rem] lg:-left-8 lg:-top-16 lg:text-[4.6rem] xl:text-[5.4rem]"
+            >
+              <span className="gradient-text">{messages.home.title}</span>
+            </motion.h1>
 
-            <Reveal delay={150}>
-              <div className="glass-panel rounded-[30px] p-5 sm:p-6 opacity-75">
-                <div className="text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
-                  {messages.header.discover}
-                </div>
-                <div className="mt-3 text-lg font-semibold tracking-tight">{messages.discover.title}</div>
-                <div className="mt-2 text-sm leading-6 text-muted-foreground">{messages.discover.description}</div>
-              </div>
-            </Reveal>
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+              className="glass-panel relative overflow-hidden rounded-[2rem] p-3 pt-20 sm:p-4 sm:pt-22 lg:p-5 lg:pt-24"
+            >
+              <div className="grid grid-cols-12 grid-rows-6 gap-3">
+                {pets.slice(0, 5).map((pet, index) => {
+                  const img = pet.images?.[0];
+                  const span =
+                    index === 0
+                      ? "col-span-7 row-span-6"
+                      : index === 1
+                        ? "col-span-5 row-span-3"
+                        : index === 2
+                          ? "col-span-5 row-span-3"
+                          : index === 3
+                            ? "col-span-4 row-span-3"
+                            : "col-span-8 row-span-3";
 
-            <Reveal delay={210}>
-              <div className="glass-panel-strong relative overflow-hidden rounded-[30px] p-5 sm:p-6">
-                <div className="absolute -right-4 top-2 h-20 w-20 rounded-full bg-primary/16 blur-3xl" />
-                <div className="absolute bottom-0 left-0 h-16 w-16 rounded-full bg-foreground/6 blur-2xl" />
-                <div className="relative">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-medium tracking-[0.18em] text-primary uppercase">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    {messages.header.addPet}
-                  </div>
-                  <div className="mt-4 flex items-start justify-between gap-4">
-                    <div>
-                      <div className="text-xl font-semibold tracking-tight">{messages.home.ctaTitle}</div>
+                  return (
+                    <motion.div
+                      key={pet.id}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 260, damping: 22 }}
+                      className={`relative overflow-hidden rounded-[2rem] bg-muted ${span}`}
+                    >
+                      {img ? (
+                        <Image
+                          src={img.url}
+                          alt={pet.name}
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 720px"
+                          className="object-cover"
+                          priority={index === 0}
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-white/40">
+                          <PawPrint className="h-8 w-8 text-primary/70" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-90" />
+                      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/20 to-transparent" />
+                      <div className="absolute bottom-3 left-3 right-3 flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-xs font-semibold tracking-[-0.02em] text-foreground backdrop-blur-xl">
+                          {pet.name}
+                        </div>
+                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+                          {formatPetAge(locale, pet.birthDate, pet.age)}
+                        </div>
+                        <div className="rounded-full border border-white/70 bg-white/45 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+                          {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+                {pets.length === 0 ? (
+                  <div className="col-span-12 row-span-6 flex items-center justify-center rounded-[2rem] border border-white/70 bg-white/45 p-8 text-center backdrop-blur-xl">
+                    <div className="max-w-md">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/50 px-3 py-1 text-xs font-medium tracking-[0.18em] text-muted-foreground uppercase">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        {messages.header.discover}
+                      </div>
+                      <div className="mt-4 text-lg font-semibold tracking-tight">{messages.home.ctaTitle}</div>
                       <div className="mt-2 text-sm leading-6 text-muted-foreground">
                         {messages.home.ctaDescription}
                       </div>
-                    </div>
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-3">
-                      <PawPrint className="h-5 w-5 text-primary" />
+                      <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                        <Button size="sm" onClick={handleAddPetClick} disabled={status === "loading"} className="gap-2">
+                          {messages.home.ctaPrimary}
+                          <ArrowUpRight className="h-4 w-4" />
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <Link href="/discover" prefetch={false}>
+                            {messages.home.ctaSecondary}
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                  <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                    <Button size="sm" onClick={handleAddPetClick} disabled={status === "loading"} className="gap-2">
-                      {messages.home.ctaPrimary}
-                      <ArrowUpRight className="h-4 w-4" />
-                    </Button>
-                    <Button asChild variant="outline" size="sm">
-                      <Link href="/discover" prefetch={false}>
-                        {messages.home.ctaSecondary}
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
+                ) : null}
               </div>
-            </Reveal>
+            </motion.div>
           </div>
         </div>
       </section>
