@@ -21,6 +21,11 @@ import { Textarea } from "@/components/ui/textarea";
 type PetType = "DOG" | "CAT" | "OTHER";
 type PetGender = "MALE" | "FEMALE" | "UNKNOWN";
 type UploadedImage = { url: string; publicId: string; width?: number; height?: number };
+type PetCreateDraft = {
+  values: PetFormValues;
+  images: UploadedImage[];
+  savedAt: number;
+};
 
 type PetFormValues = {
   name: string;
@@ -62,6 +67,8 @@ type EditablePet = {
   images: UploadedImage[];
 };
 
+const createPetDraftStorageKey = "ourpets:create-pet-draft:v1";
+
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
   return fallback;
@@ -71,6 +78,42 @@ function getInitialBirthDate(value?: string | Date | null) {
   const date = value ? new Date(value) : new Date();
   if (Number.isNaN(date.getTime())) return new Date();
   return date;
+}
+
+function readCreatePetDraft() {
+  try {
+    const raw = localStorage.getItem(createPetDraftStorageKey);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PetCreateDraft> | null;
+    if (!parsed || typeof parsed !== "object" || !parsed.values) return null;
+    return {
+      values: {
+        name: typeof parsed.values.name === "string" ? parsed.values.name : "",
+        birthYear: typeof parsed.values.birthYear === "number" ? parsed.values.birthYear : new Date().getUTCFullYear(),
+        birthMonth: typeof parsed.values.birthMonth === "number" ? parsed.values.birthMonth : new Date().getUTCMonth() + 1,
+        type:
+          parsed.values.type === "DOG" || parsed.values.type === "CAT" || parsed.values.type === "OTHER"
+            ? parsed.values.type
+            : "DOG",
+        gender:
+          parsed.values.gender === "MALE" || parsed.values.gender === "FEMALE" || parsed.values.gender === "UNKNOWN"
+            ? parsed.values.gender
+            : "UNKNOWN",
+        breed: typeof parsed.values.breed === "string" ? parsed.values.breed : "",
+        isNeutered: Boolean(parsed.values.isNeutered),
+        description: typeof parsed.values.description === "string" ? parsed.values.description : "",
+      },
+      images: Array.isArray(parsed.images)
+        ? parsed.images.filter(
+            (image): image is UploadedImage =>
+              Boolean(image) && typeof image.url === "string" && typeof image.publicId === "string"
+          )
+        : [],
+      savedAt: typeof parsed.savedAt === "number" ? parsed.savedAt : Date.now(),
+    } satisfies PetCreateDraft;
+  } catch {
+    return null;
+  }
 }
 
 async function getUploadSignature(): Promise<CloudinarySignature> {
@@ -215,6 +258,7 @@ export function PetForm({
   const router = useRouter();
   const qc = useQueryClient();
   const { locale, messages } = useI18n();
+  const isCreateMode = mode === "create";
   const initialBirthDate = getInitialBirthDate(initial?.birthDate);
   const currentYear = new Date().getUTCFullYear();
   const yearOptions = Array.from({ length: 41 }, (_, index) => currentYear - index);
@@ -226,6 +270,9 @@ export function PetForm({
   const [imageError, setImageError] = React.useState<string | null>(
     (initial?.images?.length ?? 0) > 0 ? null : messages.form.addOneImage
   );
+  const [draftReady, setDraftReady] = React.useState(!isCreateMode);
+  const [draftSavedAt, setDraftSavedAt] = React.useState<number | null>(null);
+  const [draftRestored, setDraftRestored] = React.useState(false);
 
   const form = useForm<PetFormValues>({
     resolver: zodResolver(petFormSchema),
@@ -247,6 +294,21 @@ export function PetForm({
   }, [form]);
 
   React.useEffect(() => {
+    if (!isCreateMode) return;
+    const draft = readCreatePetDraft();
+    if (!draft) {
+      setDraftReady(true);
+      return;
+    }
+    form.reset(draft.values);
+    setImages(draft.images);
+    setDraftSavedAt(draft.savedAt);
+    setDraftRestored(true);
+    setDraftReady(true);
+    void form.trigger();
+  }, [form, isCreateMode]);
+
+  React.useEffect(() => {
     if (images.length === 0) {
       setImageError(messages.form.addOneImage);
       return;
@@ -257,6 +319,156 @@ export function PetForm({
     }
     setImageError(null);
   }, [images, messages.form.addOneImage, messages.form.maxImages]);
+
+  const watchedValues = form.watch();
+
+  React.useEffect(() => {
+    if (!isCreateMode || !draftReady) return;
+    const hasMeaningfulValue = Boolean(
+      watchedValues.name.trim() ||
+        watchedValues.description.trim() ||
+        watchedValues.breed?.trim() ||
+        images.length > 0 ||
+        watchedValues.type !== "DOG" ||
+        watchedValues.gender !== "UNKNOWN" ||
+        watchedValues.isNeutered ||
+        watchedValues.birthYear !== initialBirthDate.getUTCFullYear() ||
+        watchedValues.birthMonth !== initialBirthDate.getUTCMonth() + 1
+    );
+
+    try {
+      if (!hasMeaningfulValue) {
+        localStorage.removeItem(createPetDraftStorageKey);
+        setDraftSavedAt(null);
+        return;
+      }
+
+      const savedAt = Date.now();
+      const payload: PetCreateDraft = {
+        values: {
+          name: watchedValues.name,
+          birthYear: watchedValues.birthYear,
+          birthMonth: watchedValues.birthMonth,
+          type: watchedValues.type,
+          gender: watchedValues.gender,
+          breed: watchedValues.breed ?? "",
+          isNeutered: Boolean(watchedValues.isNeutered),
+          description: watchedValues.description,
+        },
+        images,
+        savedAt,
+      };
+      localStorage.setItem(createPetDraftStorageKey, JSON.stringify(payload));
+      setDraftSavedAt(savedAt);
+    } catch {
+    }
+  }, [
+    draftReady,
+    images,
+    initialBirthDate,
+    isCreateMode,
+    watchedValues.birthMonth,
+    watchedValues.birthYear,
+    watchedValues.breed,
+    watchedValues.description,
+    watchedValues.gender,
+    watchedValues.isNeutered,
+    watchedValues.name,
+    watchedValues.type,
+  ]);
+
+  const clearDraft = React.useCallback(() => {
+    try {
+      localStorage.removeItem(createPetDraftStorageKey);
+    } catch {
+    }
+    form.reset({
+      name: "",
+      birthYear: initialBirthDate.getUTCFullYear(),
+      birthMonth: initialBirthDate.getUTCMonth() + 1,
+      type: "DOG",
+      gender: "UNKNOWN",
+      breed: "",
+      isNeutered: false,
+      description: "",
+    });
+    setImages([]);
+    setDraftSavedAt(null);
+    setDraftRestored(false);
+    void form.trigger();
+  }, [form, initialBirthDate]);
+
+  const createFlowCopy = React.useMemo(() => {
+    if (locale === "zh") {
+      return {
+        draftReady: "草稿已自动保存",
+        restored: "已恢复你上次未完成的内容",
+        clear: "清空草稿",
+        completed: "已完成",
+        basics: "基础信息",
+        story: "描述亮点",
+        photos: "上传图片",
+        publish: "准备发布",
+      };
+    }
+    if (locale === "it") {
+      return {
+        draftReady: "Bozza salvata automaticamente",
+        restored: "Abbiamo ripristinato la bozza precedente",
+        clear: "Svuota bozza",
+        completed: "Completati",
+        basics: "Dettagli base",
+        story: "Descrizione",
+        photos: "Foto",
+        publish: "Pronto a pubblicare",
+      };
+    }
+    if (locale === "es") {
+      return {
+        draftReady: "Borrador guardado automáticamente",
+        restored: "Restauramos tu último borrador",
+        clear: "Borrar borrador",
+        completed: "Completado",
+        basics: "Datos básicos",
+        story: "Descripción",
+        photos: "Fotos",
+        publish: "Listo para publicar",
+      };
+    }
+    return {
+      draftReady: "Draft saves automatically",
+      restored: "Your last draft has been restored",
+      clear: "Clear draft",
+      completed: "Completed",
+      basics: "Basics",
+      story: "Description",
+      photos: "Photos",
+      publish: "Ready to publish",
+    };
+  }, [locale]);
+
+  const completionSteps = React.useMemo(
+    () => [
+      { label: createFlowCopy.basics, done: Boolean(watchedValues.name.trim() && watchedValues.birthYear && watchedValues.birthMonth) },
+      { label: createFlowCopy.story, done: Boolean(watchedValues.description.trim()) },
+      { label: createFlowCopy.photos, done: images.length > 0 },
+      { label: createFlowCopy.publish, done: form.formState.isValid && !imageError && images.length > 0 },
+    ],
+    [
+      createFlowCopy.basics,
+      createFlowCopy.photos,
+      createFlowCopy.publish,
+      createFlowCopy.story,
+      form.formState.isValid,
+      imageError,
+      images.length,
+      watchedValues.birthMonth,
+      watchedValues.birthYear,
+      watchedValues.description,
+      watchedValues.name,
+    ]
+  );
+  const completedStepCount = completionSteps.filter((item) => item.done).length;
 
   const submit = useMutation({
     mutationFn: async (values: PetFormValues) => {
@@ -279,6 +491,12 @@ export function PetForm({
     onSuccess: async (pet) => {
       toast.success(mode === "create" ? messages.form.petCreated : messages.form.petUpdated);
       await qc.invalidateQueries({ queryKey: ["pets"] });
+      if (mode === "create") {
+        try {
+          localStorage.removeItem(createPetDraftStorageKey);
+        } catch {
+        }
+      }
       await startViewTransition(() => {
         router.push(`/pet/${pet.id}`);
       });
@@ -354,6 +572,43 @@ export function PetForm({
       <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
         {messages.form.description}
       </p>
+
+      {isCreateMode ? (
+        <div className="mt-5 glass-panel rounded-[26px] p-4 sm:p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="text-sm font-medium text-foreground">
+                {createFlowCopy.completed} {completedStepCount}/4
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {draftRestored ? createFlowCopy.restored : createFlowCopy.draftReady}
+                {draftSavedAt
+                  ? locale === "zh"
+                    ? ` · ${new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(draftSavedAt))} 保存`
+                    : ` · ${new Intl.DateTimeFormat(locale, { hour: "2-digit", minute: "2-digit" }).format(new Date(draftSavedAt))}`
+                  : ""}
+              </div>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={clearDraft} className="w-full sm:w-auto">
+              {createFlowCopy.clear}
+            </Button>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {completionSteps.map((item) => (
+              <span
+                key={item.label}
+                className={`rounded-full border px-3 py-1 text-xs backdrop-blur-xl ${
+                  item.done
+                    ? "border-primary/30 bg-primary/12 text-foreground"
+                    : "border-border/60 bg-background/70 text-muted-foreground"
+                }`}
+              >
+                {item.label}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <form
         className="mt-6 grid gap-6"
