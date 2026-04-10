@@ -271,11 +271,12 @@
 
   .navbar-shell {
     transition:
-      opacity 420ms var(--ease-soft),
-      backdrop-filter 420ms var(--ease-soft),
-      background-color 420ms var(--ease-soft),
-      border-color 420ms var(--ease-soft),
-      transform 420ms var(--ease-soft);
+      opacity 520ms var(--ease-soft),
+      backdrop-filter 520ms var(--ease-soft),
+      background-color 520ms var(--ease-soft),
+      border-color 520ms var(--ease-soft),
+      transform 520ms var(--ease-soft);
+    will-change: opacity, transform, backdrop-filter;
   }
 
   .navbar-shell.is-scrolled {
@@ -317,8 +318,8 @@
     opacity: 0;
     transform: translate3d(0, 16px, 0) scale(0.986);
     transition:
-      opacity 300ms var(--ease-soft),
-      transform 340ms var(--ease-soft);
+      opacity 420ms var(--ease-soft),
+      transform 480ms var(--ease-soft);
     will-change: opacity, transform;
   }
 
@@ -328,11 +329,28 @@
   }
 
   .route-transition {
-    animation: route-enter 320ms var(--ease-soft);
+    animation: route-enter 420ms var(--ease-soft);
   }
 
   .content-stream {
-    animation: stream-enter 280ms var(--ease-soft);
+    animation: stream-enter 380ms var(--ease-soft);
+  }
+
+  .motion-collapse {
+    transition:
+      max-height 520ms var(--ease-soft),
+      opacity 520ms var(--ease-soft),
+      transform 520ms var(--ease-soft);
+    will-change: opacity, transform;
+    transform-origin: top;
+  }
+
+  .motion-pop {
+    transition:
+      opacity 520ms var(--ease-soft),
+      transform 520ms var(--ease-soft);
+    will-change: opacity, transform;
+    transform-origin: bottom right;
   }
 }
 

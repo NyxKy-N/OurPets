@@ -131,14 +131,6 @@ export function PetDetail({
             </Button>
             {hero ? (
               <>
-                <Image
-                  src={hero}
-                  alt={pet.name}
-                  fill
-                  className="scale-110 object-cover opacity-55 blur-2xl"
-                  sizes="(max-width: 1024px) 100vw, 1024px"
-                  priority
-                />
                 <div className="absolute inset-0 bg-black/10" />
                 <div className="absolute inset-4 sm:inset-6">
                   <Image
@@ -147,6 +139,7 @@ export function PetDetail({
                     fill
                     className="object-contain object-center transition-transform duration-700 ease-out hover:scale-[1.02]"
                     sizes="(max-width: 1024px) 100vw, 1024px"
+                    quality={78}
                     priority
                   />
                 </div>

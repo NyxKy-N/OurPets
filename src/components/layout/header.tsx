@@ -366,9 +366,9 @@ export function Header() {
 
       <div
         className={cn(
-          "flex flex-col gap-2.5 overflow-hidden sm:hidden",
-          "transition-[max-height,opacity,transform] duration-500 [transition-timing-function:var(--ease-soft)]",
-          mobileNavOpen ? "max-h-[260px] opacity-100 translate-y-0" : "pointer-events-none max-h-0 opacity-0 -translate-y-2"
+          "motion-collapse flex flex-col gap-2.5 overflow-hidden sm:hidden",
+          "transform-gpu",
+          mobileNavOpen ? "max-h-[260px] opacity-100 translate-y-0 scale-100" : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
         )}
       >
         <nav className="flex flex-nowrap items-center gap-2 overflow-x-auto text-sm text-muted-foreground [-webkit-overflow-scrolling:touch] sm:overflow-visible">

@@ -7,7 +7,6 @@ import { useSession } from "next-auth/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
 
 import { useI18n } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
@@ -65,11 +64,13 @@ export function PetCard({
   });
 
   return (
-    <motion.div
-      whileHover={{ y: -2, scale: 1.01 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-    >
-      <Card className={cn("group overflow-hidden rounded-[30px] p-1", className)}>
+    <div className="hover-lift">
+      <Card
+        className={cn(
+          "group overflow-hidden rounded-[30px] p-1 [content-visibility:auto] [contain-intrinsic-size:340px_460px]",
+          className
+        )}
+      >
         <div className="flex items-center justify-between gap-2 px-3 pb-0 pt-3 sm:px-4">
           <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
             <Link href={ownerHref} prefetch={false} className="inline-flex min-w-0 items-center gap-2">
@@ -155,6 +156,7 @@ export function PetCard({
                   fill
                   loading="lazy"
                   className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  quality={isGrid ? 62 : 70}
                   sizes={isGrid ? "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw" : "(max-width: 640px) 100vw, 128px"}
                   priority={false}
                 />
@@ -190,6 +192,6 @@ export function PetCard({
           </div>
         </Link>
       </Card>
-    </motion.div>
+    </div>
   );
 }
