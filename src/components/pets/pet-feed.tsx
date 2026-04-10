@@ -45,12 +45,25 @@ export function PetFeed() {
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
   const [fabY, setFabY] = React.useState<number | null>(null);
+  const [fabXOffset, setFabXOffset] = React.useState(0);
+  const [fabIsDragging, setFabIsDragging] = React.useState(false);
   const draggingRef = React.useRef(false);
   const pointerIdRef = React.useRef<number | null>(null);
+  const startClientXRef = React.useRef(0);
   const startClientYRef = React.useRef(0);
+  const startFabXOffsetRef = React.useRef(0);
   const startFabYRef = React.useRef(0);
+  const pendingXRef = React.useRef<number | null>(null);
   const pendingYRef = React.useRef<number | null>(null);
   const rafIdRef = React.useRef<number | null>(null);
+
+  const clampFabXOffset = React.useCallback((x: number) => {
+    const pad = 24;
+    const base = fabSide === "right" ? window.innerWidth - pad : pad;
+    const min = -Math.max(base - pad, 0);
+    const max = Math.max(window.innerWidth - base - pad, 0);
+    return Math.min(Math.max(x, min), max);
+  }, [fabSide]);
 
   const clampFabY = React.useCallback((y: number) => {
     const min = 84;
@@ -234,7 +247,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`motion-collapse grid gap-3 overflow-hidden transform-gpu sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
+              className={`motion-collapse grid gap-3 overflow-hidden transform-gpu sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
@@ -361,7 +374,12 @@ export function PetFeed() {
         className={`fixed ${fabSide === "right" ? "right-6" : "left-6"} z-40 select-none touch-none sm:hidden transform-gpu`}
         style={
           fabY != null
-            ? { top: 0, transform: `translate3d(0, ${fabY}px, 0)`, willChange: "transform" }
+            ? {
+                top: 0,
+                transform: `translate3d(${fabXOffset}px, ${fabY}px, 0)`,
+                willChange: "transform",
+                transition: fabIsDragging ? "none" : "transform 180ms var(--ease-bounce)",
+              }
             : { bottom: "1.5rem" }
         }
         onPointerDown={(e) => {
@@ -369,31 +387,40 @@ export function PetFeed() {
           if (e.pointerType === "mouse") return;
           pointerIdRef.current = e.pointerId;
           draggingRef.current = false;
+          setFabIsDragging(false);
+          startClientXRef.current = e.clientX;
           startClientYRef.current = e.clientY;
+          startFabXOffsetRef.current = fabXOffset;
           startFabYRef.current = fabY ?? clampFabY(window.innerHeight - 108);
+          pendingXRef.current = null;
           pendingYRef.current = null;
         }}
         onPointerMove={(e) => {
           if (!isMobile) return;
           if (pointerIdRef.current !== e.pointerId) return;
+          const deltaX = e.clientX - startClientXRef.current;
           const delta = e.clientY - startClientYRef.current;
-          if (!draggingRef.current && Math.abs(delta) < 6) return;
+          if (!draggingRef.current && Math.max(Math.abs(deltaX), Math.abs(delta)) < 6) return;
           if (!draggingRef.current) {
             draggingRef.current = true;
+            setFabIsDragging(true);
             try {
               (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             } catch {
             }
           }
+          pendingXRef.current = clampFabXOffset(startFabXOffsetRef.current + deltaX);
           const next = clampFabY(startFabYRef.current + delta);
           pendingYRef.current = next;
           if (rafIdRef.current != null) return;
           rafIdRef.current = window.requestAnimationFrame(() => {
             rafIdRef.current = null;
+            const x = pendingXRef.current;
             const y = pendingYRef.current;
-            if (y == null) return;
+            pendingXRef.current = null;
             pendingYRef.current = null;
-            setFabY(y);
+            if (x != null) setFabXOffset(x);
+            if (y != null) setFabY(y);
           });
           e.preventDefault();
         }}
@@ -405,10 +432,21 @@ export function PetFeed() {
             window.cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = null;
           }
+          if (pendingXRef.current != null) {
+            const next = pendingXRef.current;
+            pendingXRef.current = null;
+            setFabXOffset(next);
+          }
           if (pendingYRef.current != null) {
             const next = pendingYRef.current;
             pendingYRef.current = null;
             setFabY(next);
+          }
+          if (draggingRef.current) {
+            const snapThreshold = window.innerWidth * 0.55;
+            const nextSide = e.clientX <= snapThreshold ? "left" : "right";
+            setFabSide(nextSide);
+            setFabXOffset(0);
           }
           if (draggingRef.current && finalY != null) {
             try {
@@ -417,6 +455,7 @@ export function PetFeed() {
             }
           }
           draggingRef.current = false;
+          setFabIsDragging(false);
         }}
         onPointerCancel={(e) => {
           if (pointerIdRef.current !== e.pointerId) return;
@@ -425,12 +464,14 @@ export function PetFeed() {
             window.cancelAnimationFrame(rafIdRef.current);
             rafIdRef.current = null;
           }
+          pendingXRef.current = null;
           pendingYRef.current = null;
           draggingRef.current = false;
+          setFabIsDragging(false);
         }}
       >
         <div
-          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-white/70 bg-white/40 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
+          className={`discover-fab motion-pop flex items-center gap-1 rounded-full border border-border/70 bg-background/55 p-1 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu ${
             floatingActionsOpen
               ? "translate-y-0 scale-100 opacity-100"
               : "pointer-events-none translate-y-2 scale-[0.92] opacity-0"
@@ -438,7 +479,7 @@ export function PetFeed() {
         >
           <button
             type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
             aria-label="返回顶部"
           >
@@ -447,15 +488,18 @@ export function PetFeed() {
           <Link
             href="/pets/new"
             prefetch={false}
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             aria-label={messages.header.addPet}
           >
             <Plus className="h-5 w-5" />
           </Link>
           <button
             type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
-            onClick={() => setFabSide((s) => (s === "right" ? "left" : "right"))}
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
+            onClick={() => {
+              setFabSide((s) => (s === "right" ? "left" : "right"));
+              setFabXOffset(0);
+            }}
             aria-label="切换位置"
             title="切换位置"
           >
@@ -463,7 +507,7 @@ export function PetFeed() {
           </button>
           <button
             type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 backdrop-blur-xl hover:bg-white/55 active:scale-[0.98]"
+            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
             onClick={() => setFloatingActionsOpen(false)}
             aria-label={messages.discover.hideFilters}
           >
@@ -473,7 +517,7 @@ export function PetFeed() {
 
         <button
           type="button"
-          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-white/55 active:scale-[0.98] ${
+          className={`discover-fab motion-pop soft-control absolute bottom-0 ${fabSide === "right" ? "right-0" : "left-0"} inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl transform-gpu hover:bg-background/65 active:scale-[0.98] ${
             floatingActionsOpen ? "pointer-events-none translate-y-2 scale-[0.92] opacity-0" : "translate-y-0 scale-100 opacity-100"
           }`}
           onClick={() => setFloatingActionsOpen(true)}
