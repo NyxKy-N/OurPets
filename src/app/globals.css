@@ -463,7 +463,7 @@
   }
 
   .route-transition {
-    will-change: opacity, transform;
+    will-change: opacity;
   }
 
   .content-stream {

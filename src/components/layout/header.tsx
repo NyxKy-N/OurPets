@@ -435,7 +435,7 @@ export function Header() {
 
       <div
         className={cn(
-          "motion-collapse flex flex-col gap-2.5 overflow-hidden sm:hidden",
+          "motion-collapse absolute left-0 right-0 top-full z-50 mt-3 flex flex-col gap-2.5 overflow-hidden rounded-[30px] border border-border/60 bg-background/55 px-4 py-3.5 backdrop-blur-xl sm:hidden",
           "transform-gpu",
           mobileNavOpen ? "max-h-[260px] opacity-100 translate-y-0 scale-100" : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
         )}
@@ -464,7 +464,7 @@ export function Header() {
   return (
     <header className="z-50 w-full">
       <div className="px-3 pt-4 sm:hidden">
-        <div className="glass-panel-strong mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5">
+        <div className="glass-panel-strong relative mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5">
           {navContent}
         </div>
       </div>

@@ -241,7 +241,7 @@ export function PetFeed() {
             </h2>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
+          <div className="relative grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
             <div className="glass-panel rounded-[28px] p-3.5">
               <div className="flex flex-col gap-3">
                 <div className="relative">
@@ -307,7 +307,7 @@ export function PetFeed() {
             </div>
 
             <div
-              className={`motion-collapse grid gap-3 overflow-hidden transform-gpu sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto ${
+              className={`motion-collapse absolute left-0 right-0 top-full z-30 mt-4 grid gap-3 overflow-hidden transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:opacity-100 sm:translate-y-0 sm:scale-100 sm:pointer-events-auto ${
                 mobileFiltersOpen
                   ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
                   : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
