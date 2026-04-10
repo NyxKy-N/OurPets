@@ -54,6 +54,18 @@ export function PetDetail({
   const { locale, messages } = useI18n();
   const [pet, setPet] = React.useState(initialPet);
 
+  const safeBack = React.useCallback(() => {
+    try {
+      if (window.history.length > 1) {
+        router.back();
+      } else {
+        router.push("/");
+      }
+    } catch {
+      router.push("/");
+    }
+  }, [router]);
+
   const hero = pet.images[0]?.url;
   const canManagePet = Boolean(viewerId && (viewerId === pet.ownerId || viewerIsAdmin));
   const ownerHref = viewerId === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
@@ -125,19 +137,7 @@ export function PetDetail({
               variant="outline"
               size="icon"
               className="absolute left-4 top-4 z-10 h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:left-6 sm:top-6"
-              onClick={() => {
-                if (document.documentElement.classList.contains("reduced-effects")) {
-                  router.back();
-                  return;
-                }
-                const doc = document as unknown as { startViewTransition?: (cb: () => void) => void };
-                const svt = doc.startViewTransition;
-                if (!svt) {
-                  router.back();
-                  return;
-                }
-                svt(() => router.back());
-              }}
+              onClick={safeBack}
               aria-label="返回"
             >
               <ChevronLeft className="h-5 w-5" />

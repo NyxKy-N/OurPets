@@ -170,7 +170,6 @@ export function PetCard({
       </div>
       <Link
         href={petHref}
-        prefetch={false}
         className="block"
       >
         <div
