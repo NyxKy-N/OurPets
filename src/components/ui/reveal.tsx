@@ -20,10 +20,20 @@ export function Reveal({
   React.useEffect(() => {
     try {
       const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-      const handler = () => setReduced(m.matches || document.documentElement.classList.contains("reduced-effects"));
+      const small = window.matchMedia("(max-width: 639px)");
+      const handler = () =>
+        setReduced(
+          m.matches ||
+            small.matches ||
+            document.documentElement.classList.contains("reduced-effects")
+        );
       handler();
       m.addEventListener("change", handler);
-      return () => m.removeEventListener("change", handler);
+      small.addEventListener("change", handler);
+      return () => {
+        m.removeEventListener("change", handler);
+        small.removeEventListener("change", handler);
+      };
     } catch {
       setReduced(document.documentElement.classList.contains("reduced-effects"));
     }
