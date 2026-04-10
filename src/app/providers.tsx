@@ -137,7 +137,12 @@ export function Providers({
       const hc: number | undefined = navigator.hardwareConcurrency;
       const lowMemory = typeof dm === "number" && dm <= 4;
       const lowCpu = typeof hc === "number" && hc > 0 && hc <= 4;
-      const reduced = prefersReducedMotion || lowMemory || lowCpu;
+      // @ts-expect-error connection is not in TS lib dom by default
+      const conn: { saveData?: boolean; effectiveType?: string } | undefined = navigator.connection;
+      const saveData = Boolean(conn?.saveData);
+      const effectiveType = conn?.effectiveType;
+      const lowNetwork = saveData || effectiveType === "2g" || effectiveType === "slow-2g";
+      const reduced = prefersReducedMotion || lowMemory || lowCpu || lowNetwork;
       document.documentElement.classList.toggle("reduced-effects", Boolean(reduced));
     } catch {
     }

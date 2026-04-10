@@ -70,6 +70,8 @@ const messages = {
       sortLabel: "Sort",
       latest: "Latest",
       popular: "Popular",
+      densityStandard: "Standard",
+      densityCompact: "Compact",
     },
     feed: {
       searchPlaceholder: "Search pets by name…",
@@ -286,6 +288,8 @@ const messages = {
       sortLabel: "排序",
       latest: "最新",
       popular: "热门",
+      densityStandard: "标准",
+      densityCompact: "精简",
     },
     feed: {
       searchPlaceholder: "按名字搜索宠物…",
@@ -505,6 +509,8 @@ const messages = {
       sortLabel: "Ordina",
       latest: "Più recenti",
       popular: "Popolari",
+      densityStandard: "Standard",
+      densityCompact: "Compatto",
     },
     feed: {
       searchPlaceholder: "Cerca animali per nome…",
@@ -724,6 +730,8 @@ const messages = {
       sortLabel: "Ordenar",
       latest: "Recientes",
       popular: "Populares",
+      densityStandard: "Estándar",
+      densityCompact: "Compacto",
     },
     feed: {
       searchPlaceholder: "Buscar mascotas por nombre…",

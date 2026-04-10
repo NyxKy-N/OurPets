@@ -221,6 +221,11 @@
     backdrop-filter: none;
   }
 
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 360px 460px;
+  }
+
   .reduced-effects .soft-control {
     transition:
       transform 220ms var(--ease-soft),

@@ -28,6 +28,7 @@ export type PetFeedItem = {
 };
 
 type PetCardLayout = "list" | "grid";
+type PetCardDensity = "standard" | "compact";
 
 function errorMessage(err: unknown, fallback: string) {
   if (err instanceof Error) return err.message;
@@ -38,10 +39,14 @@ export function PetCard({
   pet,
   className,
   layout = "list",
+  density = "standard",
+  imagePriority = false,
 }: {
   pet: PetFeedItem;
   className?: string;
   layout?: PetCardLayout;
+  density?: PetCardDensity;
+  imagePriority?: boolean;
 }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -49,6 +54,7 @@ export function PetCard({
   const { locale, messages } = useI18n();
   const img = pet.images?.[0];
   const isGrid = layout === "grid";
+  const isCompact = density === "compact";
   const canManagePet = Boolean(
     session?.user?.id && (session.user.id === pet.owner.id || session.user.isAdmin)
   );
@@ -65,7 +71,7 @@ export function PetCard({
 
   return (
     <Card className={cn("group overflow-hidden rounded-[30px] p-1", className)}>
-      <div className="flex items-center justify-between gap-2 px-3 pb-0 pt-3 sm:px-4">
+      <div className={cn("flex items-center justify-between gap-2 pb-0 sm:px-4", isCompact ? "px-2.5 pt-2.5" : "px-3 pt-3")}>
         <Button asChild variant="ghost" size="sm" className="min-w-0 px-2">
           <Link href={ownerHref} prefetch={false} className="inline-flex min-w-0 items-center gap-2">
             <Avatar className="h-7 w-7 shrink-0 border border-border/70 bg-background/55">
@@ -142,7 +148,8 @@ export function PetCard({
       <Link href={`/pet/${pet.id}`} prefetch={false} className="block">
         <div
           className={cn(
-            "rounded-[26px] p-4 sm:p-5",
+            "rounded-[26px] sm:p-5",
+            isCompact ? "p-3" : "p-4",
             isGrid ? "flex h-full flex-col gap-4" : "flex flex-col gap-5 sm:flex-row sm:items-center"
           )}
         >
@@ -156,10 +163,11 @@ export function PetCard({
           >
             {img ? (
               <Image
-                src={img.url}
+                src={getDiscoverImageUrl(img.url, { width: isGrid ? 900 : 384 })}
                 alt={pet.name}
                 fill
-                loading="lazy"
+                priority={imagePriority}
+                loading={imagePriority ? "eager" : "lazy"}
                 className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
                 quality={isGrid ? 62 : 70}
                 sizes={
@@ -167,7 +175,6 @@ export function PetCard({
                     ? "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                     : "(max-width: 640px) 100vw, 128px"
                 }
-                priority={false}
               />
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-85" />
@@ -199,10 +206,10 @@ export function PetCard({
                   isGrid ? "mt-auto pt-1" : "sm:flex-col sm:items-end sm:text-right"
                 )}
               >
-                <div className="rounded-full border border-border/60 bg-background/58 px-3 py-1.5 backdrop-blur-xl">
+                <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
                   {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
                 </div>
-                <div className="rounded-full border border-border/60 bg-background/58 px-3 py-1.5 backdrop-blur-xl">
+                <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
                   {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
                 </div>
               </div>
@@ -212,4 +219,18 @@ export function PetCard({
       </Link>
     </Card>
   );
+}
+
+function getDiscoverImageUrl(url: string, opts: { width: number }) {
+  if (!url) return url;
+  const marker = "/upload/";
+  const idx = url.indexOf(marker);
+  if (idx === -1) return url;
+  if (!url.includes("res.cloudinary.com")) return url;
+  const after = url.slice(idx + marker.length);
+  if (after.startsWith("v")) {
+    const transform = `f_auto,q_auto,w_${Math.round(opts.width)}`;
+    return `${url.slice(0, idx + marker.length)}${transform}/${after}`;
+  }
+  return url;
 }

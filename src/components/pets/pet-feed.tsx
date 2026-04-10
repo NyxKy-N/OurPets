@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
@@ -36,11 +37,15 @@ function useIntersectionObserver<T extends Element>(options?: IntersectionObserv
 
 export function PetFeed() {
   const { messages } = useI18n();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [q, setQ] = React.useState("");
   const [type, setType] = React.useState<PetTypeFilter>("ALL");
   const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
   const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
+  const [density, setDensity] = React.useState<"standard" | "compact">("standard");
   const [isMobile, setIsMobile] = React.useState(false);
   const [floatingActionsOpen, setFloatingActionsOpen] = React.useState(true);
   const [fabSide, setFabSide] = React.useState<"left" | "right">("right");
@@ -57,6 +62,11 @@ export function PetFeed() {
   const rafIdRef = React.useRef<number | null>(null);
   const fabMeasureRef = React.useRef<HTMLDivElement | null>(null);
   const fabWidthRef = React.useRef<number>(48);
+  const restoreTargetRef = React.useRef<number | null>(null);
+  const restoreAttemptsRef = React.useRef(0);
+  const restoringRef = React.useRef(false);
+  const scrollRafRef = React.useRef<number | null>(null);
+  const qDebounceRef = React.useRef<number | null>(null);
 
   const clampFabY = React.useCallback((y: number) => {
     const min = 84;
@@ -73,6 +83,58 @@ export function PetFeed() {
       return Math.min(Math.max(x, -available), 0);
     },
     []
+  );
+
+  const applyUrlState = React.useCallback(
+    (next: {
+      type?: PetTypeFilter;
+      sort?: PetSortFilter;
+      layout?: "1" | "2";
+      density?: "standard" | "compact";
+    }) => {
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (next.type) {
+        if (next.type === "ALL") params.delete("type");
+        else params.set("type", next.type);
+      }
+      if (next.sort) {
+        if (next.sort === "LATEST") params.delete("sort");
+        else params.set("sort", next.sort);
+      }
+      if (next.layout) {
+        if (next.layout === "1") params.delete("layout");
+        else params.set("layout", next.layout);
+      }
+      if (next.density) {
+        if (next.density === "standard") params.delete("dense");
+        else params.set("dense", "1");
+      }
+
+      const qs = params.toString();
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      const currentQs = searchParams.toString();
+      const currentHref = currentQs ? `${pathname}?${currentQs}` : pathname;
+      if (href === currentHref) return;
+      router.push(href, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  const replaceUrlQuery = React.useCallback(
+    (nextQ: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      const trimmed = nextQ.trim();
+      if (trimmed) params.set("q", nextQ);
+      else params.delete("q");
+      const qs = params.toString();
+      const href = qs ? `${pathname}?${qs}` : pathname;
+      const currentQs = searchParams.toString();
+      const currentHref = currentQs ? `${pathname}?${currentQs}` : pathname;
+      if (href === currentHref) return;
+      router.replace(href, { scroll: false });
+    },
+    [pathname, router, searchParams]
   );
 
   React.useEffect(() => {
@@ -154,6 +216,99 @@ export function PetFeed() {
     }
   }, [mobileTwoColumn]);
 
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("discover:density");
+      if (stored === "compact" || stored === "standard") setDensity(stored);
+    } catch {
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("discover:density", density);
+    } catch {
+    }
+  }, [density]);
+
+  React.useEffect(() => {
+    const typeParam = searchParams.get("type");
+    if (typeParam === "DOG" || typeParam === "CAT" || typeParam === "OTHER") setType(typeParam);
+    if (typeParam === null) setType("ALL");
+
+    const sortParam = searchParams.get("sort");
+    if (sortParam === "POPULAR") setSort("POPULAR");
+    if (sortParam === null) setSort("LATEST");
+
+    const qParam = searchParams.get("q");
+    setQ(qParam ?? "");
+
+    const layout = searchParams.get("layout");
+    if (layout === "2") setMobileTwoColumn(true);
+    if (layout === "1") setMobileTwoColumn(false);
+
+    const dense = searchParams.get("dense");
+    setDensity(dense === "1" ? "compact" : "standard");
+  }, [searchParams]);
+
+  React.useEffect(() => {
+    if (qDebounceRef.current != null) window.clearTimeout(qDebounceRef.current);
+    qDebounceRef.current = window.setTimeout(() => {
+      replaceUrlQuery(q);
+    }, 350);
+    return () => {
+      if (qDebounceRef.current != null) window.clearTimeout(qDebounceRef.current);
+    };
+  }, [q, replaceUrlQuery]);
+
+  React.useEffect(() => {
+    applyUrlState({
+      type,
+      sort,
+      layout: mobileTwoColumn ? "2" : "1",
+      density,
+    });
+  }, [applyUrlState, density, mobileTwoColumn, sort, type]);
+
+  const scrollKey = React.useMemo(() => {
+    const qs = searchParams.toString();
+    return `discover:scroll:${pathname}${qs ? `?${qs}` : ""}`;
+  }, [pathname, searchParams]);
+
+  React.useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem(scrollKey);
+      restoreTargetRef.current = stored ? Number(stored) : null;
+      restoreAttemptsRef.current = 0;
+      restoringRef.current = Boolean(stored);
+    } catch {
+      restoreTargetRef.current = null;
+      restoreAttemptsRef.current = 0;
+      restoringRef.current = false;
+    }
+  }, [scrollKey]);
+
+  React.useEffect(() => {
+    const onScroll = () => {
+      if (scrollRafRef.current != null) return;
+      scrollRafRef.current = window.requestAnimationFrame(() => {
+        scrollRafRef.current = null;
+        try {
+          sessionStorage.setItem(scrollKey, String(window.scrollY));
+        } catch {
+        }
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollRafRef.current != null) {
+        window.cancelAnimationFrame(scrollRafRef.current);
+        scrollRafRef.current = null;
+      }
+    };
+  }, [scrollKey]);
+
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
     queryFn: ({ pageParam }) => {
@@ -175,7 +330,7 @@ export function PetFeed() {
   }, [loadError, messages.feed.failedToLoad]);
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];
-  const hasActiveSearch = Boolean(q.trim());
+  const hasActiveSearch = Boolean(q.trim()) || type !== "ALL";
   const { ref: sentinelRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
     rootMargin: "600px",
   });
@@ -187,6 +342,38 @@ export function PetFeed() {
       fetchNextPage();
     }
   }, [isIntersecting, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  React.useEffect(() => {
+    const target = restoreTargetRef.current;
+    if (!restoringRef.current || target == null) return;
+    if (!query.data || items.length === 0) return;
+
+    window.requestAnimationFrame(() => window.scrollTo({ top: target, behavior: "auto" }));
+
+    const reached = window.scrollY >= target - 64;
+    if (reached) {
+      restoringRef.current = false;
+      restoreTargetRef.current = null;
+      restoreAttemptsRef.current = 0;
+      return;
+    }
+
+    if (restoreAttemptsRef.current >= 8) {
+      restoringRef.current = false;
+      restoreTargetRef.current = null;
+      restoreAttemptsRef.current = 0;
+      return;
+    }
+
+    if (hasNextPage && !isFetchingNextPage) {
+      restoreAttemptsRef.current += 1;
+      fetchNextPage();
+    } else {
+      restoringRef.current = false;
+      restoreTargetRef.current = null;
+      restoreAttemptsRef.current = 0;
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage, items.length, query.data]);
 
   const resultsKey = `${type}-${sort}-${q.trim()}`;
 
@@ -215,6 +402,68 @@ export function PetFeed() {
                     className="w-full pl-10 focus-visible:ring-primary/45"
                   />
                 </div>
+                {isMobile ? (
+                  <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+                    <Button
+                      variant={type === "ALL" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setType("ALL")}
+                    >
+                      {messages.feed.all}
+                    </Button>
+                    <Button
+                      variant={type === "DOG" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setType("DOG")}
+                    >
+                      {messages.feed.dogs}
+                    </Button>
+                    <Button
+                      variant={type === "CAT" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setType("CAT")}
+                    >
+                      {messages.feed.cats}
+                    </Button>
+                    <Button
+                      variant={type === "OTHER" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setType("OTHER")}
+                    >
+                      {messages.feed.other}
+                    </Button>
+                    <div className="h-6 w-px shrink-0 bg-border/60" />
+                    <Button
+                      variant={sort === "LATEST" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setSort("LATEST")}
+                    >
+                      {messages.discover.latest}
+                    </Button>
+                    <Button
+                      variant={sort === "POPULAR" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setSort("POPULAR")}
+                    >
+                      {messages.discover.popular}
+                    </Button>
+                    <div className="h-6 w-px shrink-0 bg-border/60" />
+                    <Button
+                      variant={density === "compact" ? "default" : "outline"}
+                      size="sm"
+                      className="shrink-0 rounded-full"
+                      onClick={() => setDensity((v) => (v === "compact" ? "standard" : "compact"))}
+                    >
+                      {density === "compact" ? messages.discover.densityCompact : messages.discover.densityStandard}
+                    </Button>
+                  </div>
+                ) : null}
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     {items.length} {messages.common.total}
@@ -337,7 +586,7 @@ export function PetFeed() {
             <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
           </>
         ) : items.length === 0 ? (
-          <Reveal>
+          <Reveal className="cv-auto">
             <div className="glass-panel relative overflow-hidden rounded-[30px] p-10 text-center md:col-span-2 xl:col-span-3">
               <div className="absolute left-8 top-8 h-16 w-16 rounded-full bg-primary/10 blur-2xl" />
               <div className="absolute bottom-8 right-8 h-20 w-20 rounded-full bg-pink-400/10 blur-2xl" />
@@ -370,8 +619,14 @@ export function PetFeed() {
           </Reveal>
         ) : (
           items.map((pet, index) => (
-            <Reveal key={pet.id} delay={Math.min(index * 70, 280)}>
-              <PetCard pet={pet} layout={isMobile && !mobileTwoColumn ? "list" : "grid"} className="h-full" />
+            <Reveal key={pet.id} delay={Math.min(index * 70, 280)} className="cv-auto">
+              <PetCard
+                pet={pet}
+                layout={isMobile && !mobileTwoColumn ? "list" : "grid"}
+                density={isMobile ? density : "standard"}
+                imagePriority={index < 2 && query.data?.pages?.length === 1}
+                className="h-full"
+              />
             </Reveal>
           ))
         )}
