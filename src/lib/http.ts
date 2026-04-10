@@ -38,6 +38,9 @@ export function handleRouteError(err: unknown) {
 
   // Prisma errors (best-effort without importing Prisma types into edge bundles)
   const prismaCode = (err as { code?: unknown } | null)?.code;
+  if (prismaCode === "P2021") {
+    return jsonError(503, "Database schema is not deployed yet", "MIGRATION_REQUIRED");
+  }
   if (typeof prismaCode === "string" && prismaCode.startsWith("P")) {
     return jsonError(400, "Database error", "DB_ERROR", { code: prismaCode });
   }
