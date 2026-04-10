@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowLeftRight, ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -493,18 +493,6 @@ export function PetFeed() {
           >
             <Plus className="h-5 w-5" />
           </Link>
-          <button
-            type="button"
-            className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
-            onClick={() => {
-              setFabSide((s) => (s === "right" ? "left" : "right"));
-              setFabXOffset(0);
-            }}
-            aria-label="切换位置"
-            title="切换位置"
-          >
-            <ArrowLeftRight className="h-5 w-5" />
-          </button>
           <button
             type="button"
             className="soft-control inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-background/55 text-foreground/80 backdrop-blur-xl hover:bg-background/65 active:scale-[0.98]"
