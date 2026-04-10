@@ -72,6 +72,12 @@ export function PetFeed() {
   }, []);
 
   React.useEffect(() => {
+    return () => {
+      document.documentElement.classList.remove("fab-dragging");
+    };
+  }, []);
+
+  React.useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const onChange = () => setIsMobile(mq.matches);
     onChange();
@@ -404,6 +410,7 @@ export function PetFeed() {
           if (!draggingRef.current) {
             draggingRef.current = true;
             setFabIsDragging(true);
+            document.documentElement.classList.add("fab-dragging");
             try {
               (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
             } catch {
@@ -456,6 +463,7 @@ export function PetFeed() {
           }
           draggingRef.current = false;
           setFabIsDragging(false);
+          document.documentElement.classList.remove("fab-dragging");
         }}
         onPointerCancel={(e) => {
           if (pointerIdRef.current !== e.pointerId) return;
@@ -468,6 +476,7 @@ export function PetFeed() {
           pendingYRef.current = null;
           draggingRef.current = false;
           setFabIsDragging(false);
+          document.documentElement.classList.remove("fab-dragging");
         }}
       >
         <div
