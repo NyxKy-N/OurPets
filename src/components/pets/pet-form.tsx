@@ -962,7 +962,7 @@ export function PetForm({
                     <button
                       type="button"
                       onClick={() => setImages((prev) => prev.filter((i) => i.publicId !== img.publicId))}
-                      className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white transition-colors hover:bg-black/75"
+                      className="soft-control absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/24 bg-black/22 text-white/90 backdrop-blur-xl hover:bg-black/32 active:scale-[0.98]"
                       aria-label={messages.form.removeImage}
                     >
                       <X className="h-4 w-4" />

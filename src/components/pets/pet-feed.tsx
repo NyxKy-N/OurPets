@@ -453,8 +453,9 @@ export function PetFeed() {
             <Reveal key={pet.id} delay={Math.min(index * 70, 280)}>
               <PetCard
                 pet={pet}
-                layout={isMobile && !mobileTwoColumn ? "list" : "grid"}
+                layout="grid"
                 density={isMobile && mobileTwoColumn ? "compact" : "standard"}
+                singleColumn={isMobile && !mobileTwoColumn}
                 className="h-full"
               />
             </Reveal>
@@ -545,8 +546,8 @@ export function PetFeed() {
 
       {query.isFetchingNextPage ? (
         <div className={`mt-4 grid gap-3 sm:gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-2"} ${discoverGridClass}`}>
-          <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
-          <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+          <PetCardSkeleton layout="grid" />
+          <PetCardSkeleton layout="grid" />
         </div>
       ) : null}
 

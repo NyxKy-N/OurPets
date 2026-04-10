@@ -41,12 +41,14 @@ export function PetCard({
   layout = "list",
   density = "standard",
   imagePriority = false,
+  singleColumn = false,
 }: {
   pet: PetFeedItem;
   className?: string;
   layout?: PetCardLayout;
   density?: PetCardDensity;
   imagePriority?: boolean;
+  singleColumn?: boolean;
 }) {
   const router = useRouter();
   const qc = useQueryClient();
@@ -55,6 +57,7 @@ export function PetCard({
   const img = pet.images?.[0];
   const isGrid = layout === "grid";
   const isCompact = density === "compact";
+  const showGridAge = !(isGrid && isCompact);
   const petHref = `/pet/${pet.id}`;
   const canManagePet = Boolean(
     session?.user?.id && (session.user.id === pet.owner.id || session.user.isAdmin)
@@ -139,7 +142,9 @@ export function PetCard({
             className={cn(
               "relative w-full overflow-hidden rounded-[24px] bg-muted",
               isGrid
-                ? "aspect-[4/5.1] min-h-[220px] sm:min-h-[280px]"
+                ? singleColumn
+                  ? "aspect-[4/4.2] min-h-[260px] sm:aspect-[4/5.1] sm:min-h-[280px]"
+                  : "aspect-[4/5.1] min-h-[220px] sm:min-h-[280px]"
                 : "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
             )}
             style={{ viewTransitionName: `pet-image-${pet.id}` }}
@@ -184,9 +189,11 @@ export function PetCard({
                     >
                       {pet.name}
                     </div>
-                    <div className="mt-1 inline-flex rounded-full border border-white/20 bg-black/20 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-white/78 uppercase backdrop-blur-xl">
-                      {formatPetAge(locale, pet.birthDate, pet.age)}
-                    </div>
+                    {showGridAge ? (
+                      <div className="mt-1 inline-flex rounded-full border border-white/20 bg-black/20 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-white/78 uppercase backdrop-blur-xl">
+                        {formatPetAge(locale, pet.birthDate, pet.age)}
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
                     <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
@@ -200,42 +207,39 @@ export function PetCard({
               </>
             ) : null}
           </div>
-          <div className={cn("min-w-0 flex-1", isGrid ? "hidden" : "")}>
-            <div
-              className={cn(
-                "flex flex-col gap-4",
-                "sm:flex-row sm:items-start sm:justify-between"
-              )}
-            >
-              <div className="min-w-0 space-y-2">
-                <div className="inline-flex rounded-full border border-border/60 bg-background/54 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
-                  {formatPetAge(locale, pet.birthDate, pet.age)}
-                </div>
-                <div
-                  className={cn(
-                    "font-semibold tracking-[-0.04em]",
-                    "truncate text-xl sm:text-2xl"
-                  )}
-                  style={{ viewTransitionName: `pet-title-${pet.id}` }}
-                >
-                  {pet.name}
-                </div>
-              </div>
+          {!isGrid ? (
+            <div className="min-w-0 flex-1">
               <div
                 className={cn(
-                  "flex shrink-0 flex-wrap gap-2 text-xs text-muted-foreground",
-                  isGrid ? "mt-auto pt-1" : "sm:flex-col sm:items-end sm:text-right"
+                  "flex flex-col gap-4",
+                  "sm:flex-row sm:items-start sm:justify-between"
                 )}
               >
-                <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
-                  {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                <div className="min-w-0 space-y-2">
+                  <div className="inline-flex rounded-full border border-border/60 bg-background/54 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
+                    {formatPetAge(locale, pet.birthDate, pet.age)}
+                  </div>
+                  <div
+                    className={cn(
+                      "font-semibold tracking-[-0.04em]",
+                      "truncate text-xl sm:text-2xl"
+                    )}
+                    style={{ viewTransitionName: `pet-title-${pet.id}` }}
+                  >
+                    {pet.name}
+                  </div>
                 </div>
-                <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
-                  {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
+                <div className="flex shrink-0 flex-wrap gap-2 text-xs text-muted-foreground sm:flex-col sm:items-end sm:text-right">
+                  <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
+                    {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                  </div>
+                  <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
+                    {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : null}
         </div>
       </Link>
     </Card>

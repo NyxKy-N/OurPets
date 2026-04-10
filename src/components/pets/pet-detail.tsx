@@ -144,7 +144,7 @@ export function PetDetail({
               type="button"
               variant="outline"
               size="icon"
-              className="absolute left-4 top-4 z-10 h-11 w-11 rounded-full border-border/70 bg-background/55 backdrop-blur-xl sm:left-6 sm:top-6"
+              className="absolute left-4 top-4 z-10 h-11 w-11 rounded-full sm:left-6 sm:top-6"
               onClick={safeBack}
               aria-label="返回"
             >
