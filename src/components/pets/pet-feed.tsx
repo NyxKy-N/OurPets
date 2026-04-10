@@ -268,7 +268,7 @@ export function PetFeed() {
 
       <button
         type="button"
-        className="soft-control fixed bottom-24 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
+        className="soft-control fixed bottom-6 right-6 z-40 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 bg-white/40 text-foreground/80 shadow-[0_18px_40px_rgba(0,0,0,0.12)] backdrop-blur-xl hover:bg-white/55 active:scale-[0.98] sm:hidden"
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         aria-label="返回顶部"
       >

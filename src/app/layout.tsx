@@ -47,9 +47,9 @@ export default async function RootLayout({
       <body className="flex min-h-full flex-col overflow-x-hidden">
         <Providers session={session} initialLocale={locale} initialMessages={messages}>
           <Header />
-          <main className="flex-1 pb-28 pt-6 sm:pt-24">{children}</main>
-          <footer className="fixed inset-x-0 bottom-0 z-40 w-full px-4 pb-4 sm:px-0 sm:pb-0">
-            <div className="glass-panel mx-auto max-w-6xl rounded-[30px] px-5 py-5 sm:hidden">
+          <main className="flex-1 pb-8 pt-6 sm:pb-28 sm:pt-24">{children}</main>
+          <footer className="px-4 pb-10 pt-6 sm:px-0 sm:pb-0 sm:pt-0">
+            <div className="glass-panel mx-auto max-w-6xl rounded-[30px] px-5 py-5 transition-[transform,box-shadow,background-color,border-color] duration-300 [transition-timing-function:var(--ease-soft)] sm:hidden">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <div className="text-lg font-semibold tracking-tight text-foreground/92">
@@ -79,7 +79,7 @@ export default async function RootLayout({
               </div>
             </div>
 
-            <div className="hidden w-full border-t border-border/60 bg-background/55 backdrop-blur-xl sm:block">
+            <div className="navbar-shell fixed inset-x-0 bottom-0 hidden w-full border-t border-border/60 bg-background/55 backdrop-blur-xl sm:block">
               <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <div className="text-lg font-semibold tracking-tight text-foreground/92">
