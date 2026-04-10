@@ -364,9 +364,9 @@ export function Header() {
 
       <div
         className={cn(
-          "navbar-shell hidden w-full border-b border-border/60 bg-background/55 backdrop-blur-xl sm:fixed sm:inset-x-0 sm:top-0 sm:block",
+          "navbar-shell navbar-edge hidden w-full bg-background/55 backdrop-blur-xl sm:fixed sm:inset-x-0 sm:top-0 sm:block sm:origin-top sm:transform-gpu sm:transition-[transform,opacity] sm:duration-500 [transition-timing-function:var(--ease-soft)]",
           scrolled ? "is-scrolled" : "",
-          desktopHidden ? "sm:-translate-y-full" : "sm:translate-y-0"
+          desktopHidden ? "sm:pointer-events-none sm:-translate-y-3 sm:scale-[0.92] sm:opacity-0" : "sm:translate-y-0 sm:scale-100 sm:opacity-100"
         )}
       >
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-3.5 sm:px-6">

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowUp, ChevronDown, LayoutGrid, LayoutList, Search, Sparkles } from "lucide-react";
+import { ArrowUp, LayoutGrid, LayoutList, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -40,6 +40,38 @@ export function PetFeed() {
   const [sort, setSort] = React.useState<PetSortFilter>("LATEST");
   const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
   const [mobileTwoColumn, setMobileTwoColumn] = React.useState(false);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    const onChange = () => setIsMobile(mq.matches);
+    onChange();
+    mq.addEventListener("change", onChange);
+    return () => {
+      mq.removeEventListener("change", onChange);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("discover:mobileTwoColumn");
+      if (stored === null) {
+        setMobileTwoColumn(window.matchMedia("(min-width: 420px)").matches);
+        return;
+      }
+      setMobileTwoColumn(stored === "1");
+    } catch {
+      setMobileTwoColumn(window.matchMedia("(min-width: 420px)").matches);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("discover:mobileTwoColumn", mobileTwoColumn ? "1" : "0");
+    } catch {
+      return;
+    }
+  }, [mobileTwoColumn]);
 
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
@@ -107,38 +139,48 @@ export function PetFeed() {
                     {items.length} {messages.common.total}
                   </p>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex items-center gap-2 sm:hidden">
+                      <Button
+                        variant="outline"
+                        onClick={() => query.refetch()}
+                        disabled={query.isFetching}
+                        className="flex-1"
+                      >
+                        {messages.feed.refresh}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={() => setMobileTwoColumn((v) => !v)}
+                        aria-label={
+                          mobileTwoColumn
+                            ? messages.discover.switchToSingleColumn
+                            : messages.discover.switchToTwoColumns
+                        }
+                      >
+                        {mobileTwoColumn ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={() => setMobileFiltersOpen((v) => !v)}
+                        aria-expanded={mobileFiltersOpen}
+                        aria-label={mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
+                        className={mobileFiltersOpen ? "border-primary/30 bg-primary/10 text-foreground" : ""}
+                      >
+                        <SlidersHorizontal className="h-4 w-4" />
+                      </Button>
+                    </div>
+
                     <Button
                       variant="outline"
                       onClick={() => query.refetch()}
                       disabled={query.isFetching}
-                      className="w-full sm:w-auto"
+                      className="hidden w-full sm:inline-flex sm:w-auto"
                     >
                       {messages.feed.refresh}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={() => setMobileTwoColumn((v) => !v)}
-                      className="w-full sm:hidden"
-                      aria-label={
-                        mobileTwoColumn ? messages.discover.switchToSingleColumn : messages.discover.switchToTwoColumns
-                      }
-                    >
-                      {mobileTwoColumn ? <LayoutList className="h-4 w-4" /> : <LayoutGrid className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      onClick={() => setMobileFiltersOpen((v) => !v)}
-                      className="w-full sm:hidden"
-                      aria-expanded={mobileFiltersOpen}
-                    >
-                      <span className="mr-2">
-                        {mobileFiltersOpen ? messages.discover.hideFilters : messages.discover.showFilters}
-                      </span>
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform ${mobileFiltersOpen ? "rotate-180" : ""}`}
-                      />
                     </Button>
                   </div>
                 </div>
@@ -200,15 +242,12 @@ export function PetFeed() {
         </div>
       </div>
 
-      <div
-        key={resultsKey}
-        className={`content-stream mt-7 grid gap-5 ${mobileTwoColumn ? "grid-cols-2" : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}
-      >
+      <div key={resultsKey} className={`content-stream mt-7 grid gap-5 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
         {query.isLoading ? (
           <>
-            <PetCardSkeleton layout="grid" />
-            <PetCardSkeleton layout="grid" />
-            <PetCardSkeleton layout="grid" />
+            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+            <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
           </>
         ) : items.length === 0 ? (
           <Reveal>
@@ -245,7 +284,7 @@ export function PetFeed() {
         ) : (
           items.map((pet, index) => (
             <Reveal key={pet.id} delay={Math.min(index * 70, 280)}>
-              <PetCard pet={pet} layout="grid" className="h-full" />
+              <PetCard pet={pet} layout={isMobile && !mobileTwoColumn ? "list" : "grid"} className="h-full" />
             </Reveal>
           ))
         )}
@@ -254,9 +293,9 @@ export function PetFeed() {
       <div ref={sentinelRef} className="h-1" />
 
       {query.isFetchingNextPage ? (
-        <div className={`mt-4 grid gap-4 ${mobileTwoColumn ? "grid-cols-2" : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
-          <PetCardSkeleton layout="grid" />
-          <PetCardSkeleton layout="grid" />
+        <div className={`mt-4 grid gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>
+          <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
+          <PetCardSkeleton layout={isMobile && !mobileTwoColumn ? "list" : "grid"} />
         </div>
       ) : null}
 
