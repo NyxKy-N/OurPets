@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowUp, ChevronLeft, ChevronRight, LayoutGrid, LayoutList, Plus, Search, SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { useI18n } from "@/app/providers";
@@ -48,8 +49,11 @@ export function PetFeed() {
   const [fabY, setFabY] = React.useState<number | null>(null);
   const [fabXOffset, setFabXOffset] = React.useState(0);
   const [fabIsDragging, setFabIsDragging] = React.useState(false);
+  const [mobileFiltersRect, setMobileFiltersRect] = React.useState<{ left: number; top: number; width: number } | null>(null);
   const draggingRef = React.useRef(false);
   const pointerIdRef = React.useRef<number | null>(null);
+  const mobileFiltersAnchorRef = React.useRef<HTMLDivElement | null>(null);
+  const mobileFiltersMenuRef = React.useRef<HTMLDivElement | null>(null);
   const startClientXRef = React.useRef(0);
   const startClientYRef = React.useRef(0);
   const startFabXOffsetRef = React.useRef(0);
@@ -208,6 +212,42 @@ export function PetFeed() {
     return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
   }, []);
 
+  const updateMobileFiltersRect = React.useCallback(() => {
+    const el = mobileFiltersAnchorRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setMobileFiltersRect({
+      left: rect.left,
+      top: rect.bottom + 12,
+      width: rect.width,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    updateMobileFiltersRect();
+    const onViewportChange = () => updateMobileFiltersRect();
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
+    return () => {
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
+    };
+  }, [mobileFiltersOpen, updateMobileFiltersRect]);
+
+  React.useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (mobileFiltersAnchorRef.current?.contains(target)) return;
+      if (mobileFiltersMenuRef.current?.contains(target)) return;
+      setMobileFiltersOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [mobileFiltersOpen]);
+
   const query = useInfiniteQuery({
     queryKey: ["pets", { q, type, sort }],
     queryFn: ({ pageParam }) => {
@@ -258,7 +298,7 @@ export function PetFeed() {
           </div>
 
           <div className="relative z-[95] grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
-            <div className="glass-panel rounded-[28px] p-3.5">
+            <div ref={mobileFiltersAnchorRef} className="glass-panel rounded-[28px] p-3.5">
               <div className="flex flex-col gap-3">
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -328,14 +368,8 @@ export function PetFeed() {
               </div>
             </div>
 
-            <div
-              className={`glass-panel-strong discover-dropdown-surface motion-collapse absolute left-0 right-0 top-full z-[140] mt-4 grid gap-3 overflow-hidden rounded-[24px] p-1.5 transform-gpu sm:static sm:mt-0 sm:grid sm:max-h-none sm:grid-cols-2 sm:rounded-none sm:bg-transparent sm:p-0 sm:shadow-none sm:backdrop-blur-none sm:pointer-events-auto sm:opacity-100 sm:translate-y-0 sm:scale-100 ${
-                mobileFiltersOpen
-                  ? "max-h-[520px] opacity-100 translate-y-0 scale-100"
-                  : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
-              }`}
-            >
-              <div className="rounded-[20px] px-3 py-2.5">
+            <div className="hidden sm:grid sm:grid-cols-2 sm:gap-3">
+              <div className="glass-panel rounded-[28px] p-3">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.categoryLabel}
                 </div>
@@ -363,7 +397,7 @@ export function PetFeed() {
                 </Tabs>
               </div>
 
-              <div className="rounded-[20px] px-3 py-2.5">
+              <div className="glass-panel rounded-[28px] p-3">
                 <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
                   {messages.discover.sortLabel}
                 </div>
@@ -438,6 +472,76 @@ export function PetFeed() {
       </div>
 
       <div ref={sentinelRef} className="h-1" />
+      {mobileFiltersOpen && mobileFiltersRect
+        ? createPortal(
+            <div
+              ref={mobileFiltersMenuRef}
+              className="glass-panel-strong fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
+              style={{
+                left: mobileFiltersRect.left,
+                top: mobileFiltersRect.top,
+                width: mobileFiltersRect.width,
+              }}
+            >
+              <div className="px-3 py-2.5">
+                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                  {messages.discover.categoryLabel}
+                </div>
+                <Tabs
+                  value={type}
+                  onValueChange={(v) => {
+                    if (v === "ALL" || v === "DOG" || v === "CAT" || v === "OTHER") {
+                      setType(v);
+                      setMobileFiltersOpen(false);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
+                    <TabsTrigger value="ALL" className="w-full text-[13px]">
+                      {messages.feed.all}
+                    </TabsTrigger>
+                    <TabsTrigger value="DOG" className="w-full text-[13px]">
+                      {messages.feed.dogs}
+                    </TabsTrigger>
+                    <TabsTrigger value="CAT" className="w-full text-[13px]">
+                      {messages.feed.cats}
+                    </TabsTrigger>
+                    <TabsTrigger value="OTHER" className="w-full text-[13px]">
+                      {messages.feed.other}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div className="mx-2 h-px bg-border/70" />
+              <div className="px-3 py-2.5">
+                <div className="mb-3 px-1 text-xs font-medium tracking-[0.2em] text-muted-foreground uppercase">
+                  {messages.discover.sortLabel}
+                </div>
+                <Tabs
+                  value={sort}
+                  onValueChange={(v) => {
+                    if (v === "LATEST" || v === "POPULAR") {
+                      setSort(v);
+                      setMobileFiltersOpen(false);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-2 gap-1.5 rounded-[24px] p-1.5">
+                    <TabsTrigger value="LATEST" className="w-full">
+                      {messages.discover.latest}
+                    </TabsTrigger>
+                    <TabsTrigger value="POPULAR" className="w-full">
+                      {messages.discover.popular}
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
 
       {query.isFetchingNextPage ? (
         <div className={`mt-4 grid gap-4 ${isMobile ? (mobileTwoColumn ? "grid-cols-2" : "grid-cols-1") : "grid-cols-1"} md:grid-cols-2 xl:grid-cols-3`}>

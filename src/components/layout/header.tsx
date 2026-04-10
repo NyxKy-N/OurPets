@@ -7,6 +7,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, Heart, Languages, LogIn, LogOut, Menu, MessageCircle, Moon, Plus, Sparkles, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
+import { createPortal } from "react-dom";
 
 import { useI18n, useReducedEffects } from "@/app/providers";
 import { apiFetch } from "@/lib/fetcher";
@@ -49,6 +50,10 @@ export function Header() {
   const [scrolled, setScrolled] = React.useState(false);
   const [desktopHidden, setDesktopHidden] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
+  const [activeDropdownMenu, setActiveDropdownMenu] = React.useState<"language" | "notifications" | "account" | null>(null);
+  const [mobileNavRect, setMobileNavRect] = React.useState<{ left: number; top: number; width: number } | null>(null);
+  const mobileShellRef = React.useRef<HTMLDivElement | null>(null);
+  const mobileNavMenuRef = React.useRef<HTMLDivElement | null>(null);
   const me = useQuery({
     queryKey: ["me"],
     queryFn: () => apiFetch<UserMe>("/api/user"),
@@ -125,6 +130,7 @@ export function Header() {
 
   React.useEffect(() => {
     setMobileNavOpen(false);
+    setActiveDropdownMenu(null);
   }, [pathname]);
 
   const announceOverlayOpen = React.useCallback((source: string) => {
@@ -135,10 +141,49 @@ export function Header() {
     const onOverlayOpen = (event: Event) => {
       const source = (event as CustomEvent<{ source?: string }>).detail?.source;
       if (source !== "header-mobile-nav") setMobileNavOpen(false);
+      if (source !== "header-language-menu" && source !== "header-notifications-menu" && source !== "header-account-menu") {
+        setActiveDropdownMenu(null);
+      }
     };
     window.addEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
     return () => window.removeEventListener(overlayOpenEventName, onOverlayOpen as EventListener);
   }, []);
+
+  const updateMobileNavRect = React.useCallback(() => {
+    const el = mobileShellRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setMobileNavRect({
+      left: rect.left,
+      top: rect.bottom + 12,
+      width: rect.width,
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (!mobileNavOpen) return;
+    updateMobileNavRect();
+    const onViewportChange = () => updateMobileNavRect();
+    window.addEventListener("resize", onViewportChange);
+    window.addEventListener("scroll", onViewportChange, true);
+    return () => {
+      window.removeEventListener("resize", onViewportChange);
+      window.removeEventListener("scroll", onViewportChange, true);
+    };
+  }, [mobileNavOpen, updateMobileNavRect]);
+
+  React.useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+      if (mobileShellRef.current?.contains(target)) return;
+      if (mobileNavMenuRef.current?.contains(target)) return;
+      setMobileNavOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [mobileNavOpen]);
 
   const primaryLinks = [
     { href: "/", label: messages.header.home, active: pathname === "/" },
@@ -234,7 +279,13 @@ export function Header() {
 
           {!session ? (
             <>
-              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
+              <DropdownMenu
+                open={activeDropdownMenu === "language"}
+                onOpenChange={(open) => {
+                  setActiveDropdownMenu(open ? "language" : null);
+                  if (open) announceOverlayOpen("header-language-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 gap-2 px-3.5">
                     <Languages className="h-4 w-4" />
@@ -267,7 +318,13 @@ export function Header() {
             </>
           ) : (
             <>
-              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-language-menu")}>
+              <DropdownMenu
+                open={activeDropdownMenu === "language"}
+                onOpenChange={(open) => {
+                  setActiveDropdownMenu(open ? "language" : null);
+                  if (open) announceOverlayOpen("header-language-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="hidden h-10 gap-2 px-3.5 sm:inline-flex">
                     <Languages className="h-4 w-4" />
@@ -305,7 +362,13 @@ export function Header() {
             <div className="glass-button h-10 w-24 animate-pulse rounded-full" />
           ) : session ? (
             <>
-              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-notifications-menu")}>
+              <DropdownMenu
+                open={activeDropdownMenu === "notifications"}
+                onOpenChange={(open) => {
+                  setActiveDropdownMenu(open ? "notifications" : null);
+                  if (open) announceOverlayOpen("header-notifications-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
@@ -321,7 +384,7 @@ export function Header() {
                     ) : null}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[220] w-[22rem] p-2">
+                <DropdownMenuContent align="end" className="z-[260] w-[22rem] p-2">
                   <div className="flex items-center justify-between px-2 py-2">
                     <DropdownMenuLabel className="px-0 py-0">{messages.notifications.title}</DropdownMenuLabel>
                     <Button
@@ -383,7 +446,13 @@ export function Header() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <DropdownMenu onOpenChange={(open) => open && announceOverlayOpen("header-account-menu")}>
+              <DropdownMenu
+                open={activeDropdownMenu === "account"}
+                onOpenChange={(open) => {
+                  setActiveDropdownMenu(open ? "account" : null);
+                  if (open) announceOverlayOpen("header-account-menu");
+                }}
+              >
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="h-10 px-2.5">
                     <Avatar className="h-8 w-8">
@@ -397,7 +466,7 @@ export function Header() {
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="z-[220] w-56">
+                <DropdownMenuContent align="end" className="z-[260] w-56">
                   <DropdownMenuLabel className="flex flex-col">
                     <span className="text-sm">{displayName}</span>
                     <span className="text-xs font-normal text-muted-foreground">
@@ -454,38 +523,13 @@ export function Header() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          "glass-panel-strong motion-collapse absolute left-0 right-0 top-full z-[120] mt-3 flex flex-col gap-2.5 overflow-hidden rounded-[30px] px-4 py-3.5 sm:hidden",
-          "transform-gpu",
-          mobileNavOpen ? "max-h-[260px] opacity-100 translate-y-0 scale-100" : "pointer-events-none max-h-0 opacity-0 -translate-y-2 scale-[0.985]"
-        )}
-      >
-        <nav className="flex flex-nowrap items-center gap-2 overflow-x-auto text-sm text-muted-foreground [-webkit-overflow-scrolling:touch] sm:overflow-visible">
-          {primaryLinks.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={item.active ? "page" : undefined}
-              onClick={() => setMobileNavOpen(false)}
-              className={`inline-flex shrink-0 items-center justify-center rounded-full px-4 py-2 text-center transition-[transform,box-shadow,background-color,color,border-color,opacity] duration-300 [transition-timing-function:var(--ease-soft)] sm:text-left ${
-                item.active
-                  ? "glass-button border-primary/28 bg-primary/[0.16] text-foreground shadow-[0_14px_32px_hsl(var(--primary)/0.16)]"
-                  : "glass-button text-foreground/78"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-      </div>
     </>
   );
 
   return (
     <header className="relative z-[110] w-full">
       <div className="relative z-[110] px-3 pt-4 sm:hidden">
-        <div className="glass-panel-strong relative mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5">
+        <div ref={mobileShellRef} className="glass-panel-strong relative mx-auto flex max-w-6xl flex-col gap-4 rounded-[30px] px-4 py-3.5">
           {navContent}
         </div>
       </div>
@@ -501,6 +545,38 @@ export function Header() {
           {navContent}
         </div>
       </div>
+      {mobileNavOpen && mobileNavRect
+        ? createPortal(
+            <div
+              ref={mobileNavMenuRef}
+              className="glass-panel-strong motion-collapse fixed z-[240] overflow-hidden rounded-[24px] p-1.5 text-popover-foreground sm:hidden"
+              style={{
+                left: mobileNavRect.left,
+                top: mobileNavRect.top,
+                width: mobileNavRect.width,
+              }}
+            >
+              <nav className="flex flex-col gap-1">
+                {primaryLinks.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-current={item.active ? "page" : undefined}
+                    onClick={() => setMobileNavOpen(false)}
+                    className={`inline-flex items-center rounded-[20px] px-3 py-2.5 text-sm transition-[transform,background-color,color] duration-300 [transition-timing-function:var(--ease-soft)] ${
+                      item.active
+                        ? "bg-accent/70 text-foreground"
+                        : "text-foreground/78 hover:bg-accent/55 hover:text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>,
+            document.body
+          )
+        : null}
     </header>
   );
 }
