@@ -281,7 +281,7 @@ export function Header() {
                     <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="z-[260] w-44">
                   <DropdownMenuLabel>{messages.header.language}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {locales.map((value) => (
@@ -314,7 +314,7 @@ export function Header() {
                     <span className="hidden text-sm sm:inline">{messages.languages[locale]}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="z-[260] w-44">
                   <DropdownMenuLabel>{messages.header.language}</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {locales.map((value) => (
