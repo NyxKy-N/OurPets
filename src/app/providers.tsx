@@ -124,7 +124,7 @@ export function Providers({
     <SessionProvider session={session}>
       <QueryClientProvider client={queryClient}>
         <LocaleProvider initialLocale={initialLocale} initialMessages={initialMessages}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             {children}
             <Toaster richColors closeButton />
           </ThemeProvider>

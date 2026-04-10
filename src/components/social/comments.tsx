@@ -307,7 +307,7 @@ export function Comments({
           <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
             {messages.comments.title}
           </div>
-          <h2 className="mt-2 text-2xl font-semibold tracking-[-0.03em]">
+          <h2 className="gradient-text mt-2 text-2xl font-semibold tracking-[-0.03em]">
             {messages.comments.title}
           </h2>
         </div>

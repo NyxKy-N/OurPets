@@ -83,7 +83,7 @@ export function PetFeed() {
             <div className="text-xs font-medium tracking-[0.22em] text-muted-foreground uppercase">
               {messages.discover.browseLabel}
             </div>
-            <h2 className="text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
+            <h2 className="gradient-text text-2xl font-semibold tracking-[-0.03em] sm:text-3xl">
               {messages.discover.title}
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground">{messages.discover.description}</p>
@@ -92,12 +92,15 @@ export function PetFeed() {
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,1fr)] xl:items-start">
             <div className="glass-panel rounded-[28px] p-3.5">
               <div className="flex flex-col gap-3">
-                <Input
-                  placeholder={messages.feed.searchPlaceholder}
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  className="w-full focus-visible:ring-primary/45"
-                />
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder={messages.feed.searchPlaceholder}
+                    value={q}
+                    onChange={(e) => setQ(e.target.value)}
+                    className="w-full pl-10 focus-visible:ring-primary/45"
+                  />
+                </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm text-muted-foreground">
                     {items.length} {messages.common.total}

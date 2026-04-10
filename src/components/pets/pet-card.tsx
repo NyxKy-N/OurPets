@@ -122,7 +122,7 @@ export function PetCard({
                 priority={false}
               />
             ) : null}
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary/12 via-transparent to-white/6 opacity-80" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/18 via-fuchsia-500/10 to-cyan-300/8 opacity-85" />
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/30 to-transparent opacity-70" />
           </div>
           <div className={cn("min-w-0 flex-1", isGrid ? "flex flex-col" : "")}>

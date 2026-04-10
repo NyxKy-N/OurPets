@@ -62,17 +62,17 @@
   }
 
   .dark {
-    --background: 222 28% 7%;
+    --background: 228 30% 6%;
     --foreground: 210 36% 96%;
 
-    --card: 223 25% 9%;
+    --card: 229 26% 8%;
     --card-foreground: 210 36% 96%;
 
-    --popover: 223 24% 10%;
+    --popover: 229 24% 10%;
     --popover-foreground: 210 36% 96%;
 
-    --primary: 214 88% 68%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 270 92% 72%;
+    --primary-foreground: 240 22% 12%;
 
     --secondary: 223 20% 14%;
     --secondary-foreground: 210 32% 94%;
@@ -80,15 +80,15 @@
     --muted: 223 18% 13%;
     --muted-foreground: 214 15% 68%;
 
-    --accent: 222 22% 16%;
+    --accent: 228 22% 16%;
     --accent-foreground: 210 34% 96%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 219 19% 21%;
-    --input: 219 19% 21%;
-    --ring: 214 88% 68%;
+    --border: 230 18% 18%;
+    --input: 230 18% 18%;
+    --ring: 270 92% 72%;
   }
 
   * {
@@ -115,10 +115,11 @@
 
   .dark body {
     background-image:
-      radial-gradient(circle at 12% 14%, hsl(var(--primary) / 0.12), transparent 18%),
-      radial-gradient(circle at 86% 4%, hsl(217 92% 64% / 0.11), transparent 18%),
-      radial-gradient(circle at 50% 0%, hsl(var(--foreground) / 0.035), transparent 32%),
-      linear-gradient(180deg, hsl(222 30% 6%), hsl(224 27% 7.2%) 42%, hsl(224 25% 6.6%));
+      radial-gradient(circle at 12% 14%, hsl(var(--primary) / 0.18), transparent 20%),
+      radial-gradient(circle at 88% 10%, hsl(308 92% 66% / 0.14), transparent 22%),
+      radial-gradient(circle at 70% 64%, hsl(196 92% 60% / 0.08), transparent 26%),
+      radial-gradient(circle at 50% 0%, hsl(var(--foreground) / 0.04), transparent 34%),
+      linear-gradient(180deg, hsl(230 34% 5.4%), hsl(228 30% 6.6%) 42%, hsl(228 28% 6%));
   }
 
   ::selection {
@@ -294,11 +295,7 @@
   }
 
   .gradient-text {
-    background-image: linear-gradient(
-      135deg,
-      hsl(var(--foreground)),
-      hsl(var(--foreground) / 0.68)
-    );
+    background-image: linear-gradient(135deg, hsl(var(--foreground)), hsl(var(--primary)), hsl(308 92% 66% / 0.92));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
