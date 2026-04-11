@@ -65,20 +65,6 @@ export function PetCard({
   );
   const ownerHref = session?.user?.id === pet.owner.id ? "/profile" : `/profile/${pet.owner.id}`;
   const reportHref = `/feedback?report=pet&id=${encodeURIComponent(pet.id)}&name=${encodeURIComponent(pet.name)}`;
-  const stopLinkNavigation = React.useCallback((e: React.SyntheticEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const ne = (e as unknown as { nativeEvent?: { stopImmediatePropagation?: () => void } }).nativeEvent;
-    ne?.stopImmediatePropagation?.();
-  }, []);
-  const openOwner = React.useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      router.push(ownerHref);
-    },
-    [ownerHref, router]
-  );
   const deletePet = useMutation({
     mutationFn: () => apiFetch<{ id: string }>(`/api/pets/${pet.id}`, { method: "DELETE" }),
     onSuccess: async () => {
@@ -142,135 +128,153 @@ export function PetCard({
           )}
         </div>
       ) : null}
-      <Link
-        href={petHref}
-        className="block"
-      >
+      {isGrid ? (
         <div
           className={cn(
             "rounded-[26px] sm:p-5",
             isCompact ? "p-2.5" : "p-4",
-            isGrid ? "flex h-full flex-col gap-4" : "flex flex-col gap-5 sm:flex-row sm:items-center"
+            "flex h-full flex-col gap-4"
           )}
         >
           <div
             className={cn(
               "relative w-full overflow-hidden rounded-[24px] bg-muted",
-              isGrid
-                ? singleColumn
-                  ? "aspect-[4/4.2] min-h-[260px] sm:aspect-[4/5.1] sm:min-h-[280px]"
-                  : "aspect-[4/5.1] min-h-[220px] sm:min-h-[280px]"
-                : "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
+              singleColumn
+                ? "aspect-[4/4.2] min-h-[260px] sm:aspect-[4/5.1] sm:min-h-[280px]"
+                : "aspect-[4/5.1] min-h-[220px] sm:min-h-[280px]"
             )}
             style={{ viewTransitionName: `pet-image-${pet.id}` }}
           >
             {img ? (
               <Image
-                src={getDiscoverImageUrl(img.url, { width: isGrid ? 900 : 384 })}
+                src={getDiscoverImageUrl(img.url, { width: 900 })}
                 alt={pet.name}
                 fill
                 priority={imagePriority}
                 loading={imagePriority ? "eager" : "lazy"}
                 className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
-                quality={isGrid ? 62 : 70}
-                sizes={
-                  isGrid
-                    ? "(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                    : "(max-width: 640px) 100vw, 128px"
-                }
+                quality={62}
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
               />
             ) : null}
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/14 via-transparent to-foreground/6 opacity-85" />
             <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/22 to-transparent opacity-70" />
-            {isGrid ? (
-              <>
-                <button
-                  type="button"
-                  className="soft-control absolute left-3 top-3 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-left text-xs text-white/92 backdrop-blur-xl hover:bg-black/30 active:scale-[0.98]"
-                  onClickCapture={stopLinkNavigation}
-                  onPointerDown={stopLinkNavigation}
-                  onMouseDown={stopLinkNavigation}
-                  onTouchStart={stopLinkNavigation}
-                  onClick={openOwner}
-                  aria-label={pet.owner.name ?? messages.common.unknown}
-                >
-                  <Avatar className="h-6 w-6 shrink-0 border border-white/20 bg-white/15">
-                    <AvatarImage src={pet.owner.image ?? undefined} />
-                    <AvatarFallback>
-                      {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="truncate font-medium">{pet.owner.name ?? messages.common.unknown}</span>
-                </button>
+            <Link
+              href={petHref}
+              className="absolute inset-0 z-10"
+              aria-label={pet.name}
+            />
+            <Link
+              href={ownerHref}
+              className="soft-control absolute left-3 top-3 z-20 inline-flex max-w-[70%] items-center gap-2 rounded-full border border-white/30 bg-black/25 px-2.5 py-1.5 text-left text-xs text-white/92 backdrop-blur-xl hover:bg-black/30 active:scale-[0.98]"
+              aria-label={pet.owner.name ?? messages.common.unknown}
+            >
+              <Avatar className="h-6 w-6 shrink-0 border border-white/20 bg-white/15">
+                <AvatarImage src={pet.owner.image ?? undefined} />
+                <AvatarFallback>
+                  {(pet.owner.name ?? messages.common.unknown).slice(0, 1)?.toUpperCase() ?? "U"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate font-medium">{pet.owner.name ?? messages.common.unknown}</span>
+            </Link>
+            <div
+              className={cn(
+                "absolute inset-x-3 bottom-3 z-20",
+                isCompact ? "flex flex-col gap-2" : "flex items-end justify-between gap-3"
+              )}
+            >
+              <div className="min-w-0">
                 <div
                   className={cn(
-                    "absolute inset-x-3 bottom-3",
-                    isCompact ? "flex flex-col gap-2" : "flex items-end justify-between gap-3"
+                    "line-clamp-2 font-semibold tracking-[-0.04em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.28)]",
+                    isCompact ? "text-base" : "text-lg"
                   )}
+                  style={{ viewTransitionName: `pet-title-${pet.id}` }}
                 >
-                  <div className="min-w-0">
-                    <div
-                      className={cn(
-                        "line-clamp-2 font-semibold tracking-[-0.04em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.28)]",
-                        isCompact ? "text-base" : "text-lg"
-                      )}
-                      style={{ viewTransitionName: `pet-title-${pet.id}` }}
-                    >
-                      {pet.name}
-                    </div>
-                    {showGridAge ? (
-                      <div className="mt-1 inline-flex rounded-full border border-white/20 bg-black/20 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-white/78 uppercase backdrop-blur-xl">
-                        {formatPetAge(locale, pet.birthDate, pet.age)}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className={cn("flex shrink-0 items-center gap-1.5", isCompact ? "self-start" : "")}>
-                    <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
-                      {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
-                    </div>
-                    <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
-                      {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
-                    </div>
-                  </div>
+                  {pet.name}
                 </div>
-              </>
-            ) : null}
+                {showGridAge ? (
+                  <div className="mt-1 inline-flex rounded-full border border-white/20 bg-black/20 px-2.5 py-1 text-[10px] font-medium tracking-[0.18em] text-white/78 uppercase backdrop-blur-xl">
+                    {formatPetAge(locale, pet.birthDate, pet.age)}
+                  </div>
+                ) : null}
+              </div>
+              <div className={cn("flex shrink-0 items-center gap-1.5", isCompact ? "self-start" : "")}>
+                <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
+                  {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
+                </div>
+                <div className="rounded-full border border-white/18 bg-black/18 px-2.5 py-1 text-[11px] text-white/82 backdrop-blur-xl">
+                  {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
+                </div>
+              </div>
+            </div>
           </div>
-          {!isGrid ? (
+        </div>
+      ) : (
+        <Link href={petHref} className="block">
+          <div
+            className={cn(
+              "rounded-[26px] sm:p-5",
+              isCompact ? "p-2.5" : "p-4",
+              "flex flex-col gap-5 sm:flex-row sm:items-center"
+            )}
+          >
+            <div
+              className={cn(
+                "relative w-full overflow-hidden rounded-[24px] bg-muted",
+                "aspect-[4/3] sm:h-32 sm:w-32 sm:shrink-0 sm:aspect-square"
+              )}
+              style={{ viewTransitionName: `pet-image-${pet.id}` }}
+            >
+              {img ? (
+                <Image
+                  src={getDiscoverImageUrl(img.url, { width: 384 })}
+                  alt={pet.name}
+                  fill
+                  priority={imagePriority}
+                  loading={imagePriority ? "eager" : "lazy"}
+                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+                  quality={70}
+                  sizes="(max-width: 640px) 100vw, 128px"
+                />
+              ) : null}
+            </div>
             <div className="min-w-0 flex-1">
-              <div
-                className={cn(
-                  "flex flex-col gap-4",
-                  "sm:flex-row sm:items-start sm:justify-between"
-                )}
-              >
+              <div className={cn("flex flex-col gap-4", "sm:flex-row sm:items-start sm:justify-between")}>
                 <div className="min-w-0 space-y-2">
                   <div className="inline-flex rounded-full border border-border/60 bg-background/54 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-muted-foreground uppercase backdrop-blur-xl">
                     {formatPetAge(locale, pet.birthDate, pet.age)}
                   </div>
                   <div
-                    className={cn(
-                      "font-semibold tracking-[-0.04em]",
-                      "truncate text-xl sm:text-2xl"
-                    )}
+                    className={cn("font-semibold tracking-[-0.04em]", "truncate text-xl sm:text-2xl")}
                     style={{ viewTransitionName: `pet-title-${pet.id}` }}
                   >
                     {pet.name}
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2 text-xs text-muted-foreground sm:flex-col sm:items-end sm:text-right">
-                  <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
+                  <div
+                    className={cn(
+                      "rounded-full border border-border/60 bg-background/58 backdrop-blur-xl",
+                      isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5"
+                    )}
+                  >
                     {formatCompactLabel(locale, pet._count.likes, messages.petCard.likes)}
                   </div>
-                  <div className={cn("rounded-full border border-border/60 bg-background/58 backdrop-blur-xl", isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5")}>
+                  <div
+                    className={cn(
+                      "rounded-full border border-border/60 bg-background/58 backdrop-blur-xl",
+                      isCompact ? "px-2.5 py-1 text-[11px]" : "px-3 py-1.5"
+                    )}
+                  >
                     {formatCompactLabel(locale, pet._count.comments, messages.petCard.comments)}
                   </div>
                 </div>
               </div>
             </div>
-          ) : null}
-        </div>
-      </Link>
+          </div>
+        </Link>
+      )}
     </Card>
   );
 }
